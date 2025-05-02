@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+
+build-backend = "setuptools.build_meta"
+
+[project]
+
+name = "chathist"
+
+version = "0.0.1"
+
+description = "This is a gpt2 implementation from scratch after reading Buildllm from scratch. This is part of my AI capstone project at DePaul University."
+
+authors =[{name = "Sameer Gururaj Mathad", email = "smathad@depaul.edu"}]
+
+requires-python = "==3.12.0"
+
+dynamic = ["dependencies"]
+
+readme = "README.md"
+
+keywords = ["gpt2", "loRA", "transformer", "pytorch"]
+
+
+[tool.setuptools]
+
+packages = ["chathist"]
+
+[tool.setuptools.dynamic]
+
+dependencies = {file =  ["requirements.txt"]}
+
+
