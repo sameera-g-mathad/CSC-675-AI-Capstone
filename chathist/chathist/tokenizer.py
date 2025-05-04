@@ -12,6 +12,7 @@ class Tokenizer:
         Constructor for the tokenizer.
         :param str encoding: Encoding name to be passed. By default, gpt2 is used.
 
+        :examples:
         >>> tk = Tokenizer()
         """
         self.tokenizer = tiktoken.get_encoding(encoding)
@@ -27,6 +28,7 @@ class Tokenizer:
         :returns: List of encoded ids.
         :rtype: list[int]
 
+        :examples:
         >>> tk.encode_text('what is the significance of indian history')
         >>> # Output: [10919, 318, 262, 12085, 286, 773, 666, 2106]
         """
@@ -49,6 +51,7 @@ class Tokenizer:
         :returns: retrieved string.
         :rtype: str
 
+        :examples:
         >>> tk.decode_ids([10919, 318, 262, 12085, 286, 773, 666, 2106])
         >>> # Output: 'what is the significance of indian history'
         """
