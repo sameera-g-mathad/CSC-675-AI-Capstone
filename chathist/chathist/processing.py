@@ -30,7 +30,7 @@ class InstructionDataLoader:
     def __init__(self):
         self._ignore_index = chathist.config.ignore_index
         self._endoftext = chathist.config.endoftext
-        self._response_query = chathist.config.response_query
+        self._response_ids = chathist.config.response_ids
 
     def _custom_collate(self, batch, _endoftext=50256, mask_input: bool = False):
         """
@@ -76,8 +76,7 @@ class InstructionDataLoader:
             ), "Input and targets should have equal length"
 
             if mask_input:
-                print("Not supported yet")
-            #     self._mask(_target, _tokenizer.encode_text(_response_query).numpy().tolist(),)
+                _target = self._mask(_target, self._response_ids)
             _inputs.append(_input)
             _targets.append(_target)
 
@@ -103,4 +102,47 @@ class InstructionDataLoader:
             collate_fn=_collate_fn,
         )
 
-    # def _mask(self, source: list, mask: list):
+    def _mask(self, source: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """
+        This method is used to mask all the input values including response ids
+        to ignore_index so that the values are not considered for loss calculation
+        and LLM does not generate redundant values
+
+        :param torch.Tensor source: The source ids that needs to be masked.
+        :param torch.Tensor mask: The mask ids used as a reference. Since this is used
+        to mask until response query, this values are ids for response query.
+
+        :rtype: torch.Tensor
+        :returns: Returns the source tensor
+        """
+        i = 0  # iterator for source
+        j = 0  # iterator for mask
+        match_found = False
+
+        # This line loops through all values in source
+        while i < len(source):
+            count = 0
+
+            # This loop runs until there is no match found between source and mask,
+            # this happens when the iterator i is at the start of response ids in the source
+            while (
+                i < len(source) and j < len(mask) and source[i].item() == mask[j].item()
+            ):
+                count += 1
+                # All the items that are matching, i.e, response ids of source and mask ids
+                # are matched and response ids is set to _ignore_index
+                source[i] = self._ignore_index
+                i += 1
+                j += 1
+
+                # if all the response ids was matched, then the loop should be terminated
+                if count == len(mask):
+                    match_found = True
+                    break
+            if match_found:
+                break
+            # If there is no match, then the values of source is set to ignore_index.
+            source[i] = self._ignore_index
+            i += 1
+            j = 0
+        return source

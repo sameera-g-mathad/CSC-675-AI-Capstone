@@ -67,11 +67,23 @@ class Config:
         self._response_query = response_query
 
     @property
-    def response_query(self):
+    def response_query(self) -> str:
         """
         Returns the stored response query back.
         """
+        if self._response_query is None:
+            raise ValueError("Response query is not set.")
         return self._response_query
+
+    @property
+    def response_ids(self) -> torch.Tensor:
+        """
+        Returns the ids of stored response query back.
+        """
+        if self._response_query is None:
+            raise ValueError("Response query is not set.")
+
+        return self.tokenizer.encode_text(self._response_query)
 
     def set_ingore_index(self, ignore_index):
         """
