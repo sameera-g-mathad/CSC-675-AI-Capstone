@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import pandas as pd
+import chathist
 
 
 class Instruction(ABC):
@@ -23,6 +24,9 @@ class Instruction(ABC):
         self.prompt = prompt
         self.input_query = input_query
         self.response_query = response_query
+
+        # this is used in dataloader to mask inputs if user chooses to do so.
+        chathist.config._set_response_query(response_query=response_query)
 
     @abstractmethod
     def format(self, _input: str) -> str:

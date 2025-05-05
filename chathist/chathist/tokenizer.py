@@ -1,3 +1,4 @@
+import chathist
 import torch
 import tiktoken
 
@@ -38,7 +39,8 @@ class Tokenizer:
 
         return torch.tensor(
             self.tokenizer.encode(text, allowed_special=set(allowed_special)),
-            dtype=torch.int16,
+            dtype=chathist.config.dtype,
+            requires_grad=False,
         )
 
     def decode_ids(self, ids: torch.Tensor) -> str:
@@ -55,5 +57,7 @@ class Tokenizer:
         >>> tk.decode_ids([10919, 318, 262, 12085, 286, 773, 666, 2106])
         >>> # Output: 'what is the significance of indian history'
         """
-
-        return self.tokenizer.decode(ids.numpy().tolist())
+        filterd_ids = [
+            int(id.item()) for id in ids if id != chathist.config.ignore_index
+        ]
+        return self.tokenizer.decode(filterd_ids)
