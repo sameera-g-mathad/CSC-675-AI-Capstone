@@ -1,4 +1,5 @@
-from chathist.tokenizer import Tokenizer
+from .tokenizer import Tokenizer
+from .custom_exception import NotAGPTFlavor
 import torch
 
 
@@ -15,6 +16,62 @@ class Config:
     _ignore_index: int = -100
     _endoftext: int = 50256
     _dtype = torch.uint16
+    # By default the repo is set as the intention of this
+    # project is to build gpt2 model.
+    _hugginface_user = "openai-community"
+    _gpt_config: dict = {
+        "gpt2": {
+            "vocab_size": 50257,  # Vocabulary size
+            "context_length": 1024,  # Context length
+            "emb_dim": 768,  # Embedding dimension
+            "n_heads": 12,  # Number of attention heads
+            "n_layers": 12,  # Number of layers
+            "drop_rate": 0.1,  # Dropout rate
+            # "qkv_bias": False,
+        },
+        "gpt2-medium": {},
+        "gpt2-large": {},
+        "gpt2-xl": {
+            "vocab_size": 50257,  # Vocabulary size
+            "context_length": 1024,  # Context length
+            "emb_dim": 1600,  # Embedding dimension
+            "n_heads": 25,  # Number of attention heads
+            "n_layers": 48,  # Number of layers
+            "drop_rate": 0.1,
+        },
+    }
+    _gpt_flavor: str = "gpt2-xl"
+
+    def set_gpt_flavor(self, flavor: str = "gpt2-xl") -> None:
+        """
+        This method is to set the gpt2 flavor that instantiates
+        all the weights as needed.
+
+        :param str flavor: Flavor to retrieve. `["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"]`
+        are supported values as they serve as the repo names on hugginface as well.
+        """
+        if flavor not in ["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"]:
+            raise NotAGPTFlavor(
+                f'{flavor} is not accpted!!! Please pass any one of ["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"]'
+            )
+        self._gpt_flavor = flavor
+
+    @property
+    def gpt_flavor(self):
+        """
+        Returns the gpt config correponding to the set flavor.
+        """
+        return self._gpt_config[self._gpt_flavor]
+
+    @property
+    def huggingface_repo(self):
+        """
+        Property to return the default huggingface repo name,
+        which is then used to download available weights.
+        """
+        if self._gpt_flavor is None:
+            raise ValueError("Please set the flavor before.")
+        return self._hugginface_user + self._gpt_flavor
 
     def set_tokenizer(self, tokenizer: Tokenizer) -> None:
         """
