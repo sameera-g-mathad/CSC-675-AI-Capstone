@@ -71,7 +71,7 @@ class Config:
         """
         if self._gpt_flavor is None:
             raise ValueError("Please set the flavor before.")
-        return self._hugginface_user + self._gpt_flavor
+        return f"{self._hugginface_user}/{self._gpt_flavor}"
 
     def set_tokenizer(self, tokenizer: Tokenizer) -> None:
         """

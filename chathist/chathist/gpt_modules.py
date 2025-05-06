@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 import numpy as np
 import torch
 from torch import nn
@@ -8,15 +9,24 @@ import chathist
 
 class EModule(nn.Module, ABC):
     """
-    Extended Module to add additional features to classes.
+    Experimental
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+
+    def assign_nn_parameter(self, weights: torch.Tensor) -> torch.nn.Parameter:
+        """
+        Experimental
+        """
+        return nn.Parameter(weights.clone().detach())
+
     @abstractmethod
-    def load_weights(self, weights) -> None:
+    def load_weights(self, weights: OrderedDict | None):
         """
-        abstract method to load the weights by lower layers.
+        Experimental
         """
-        raise NotImplementedError("Subclasses should implement this method")
+        pass
 
 
 class LayerNorm(EModule):
@@ -50,8 +60,13 @@ class LayerNorm(EModule):
         # Scale and shift inputs by learning patterns which are best.
         return self.scale * x_norm + self.shift
 
-    def load_weights(self, weights) -> None:
-        pass
+    def load_weights(self, weights: OrderedDict | None) -> None:
+        """Experimental"""
+
+        if weights is None:
+            raise ValueError("Weights passed should be an instance of OrderedDict")
+        self.scale = self.assign_nn_parameter(weights["scale"])
+        self.shift = self.assign_nn_parameter(weights["shift"])
 
 
 class GeLU(nn.Module):
@@ -159,8 +174,16 @@ class MLPGPT2(EModule):
         """
         return self.layers(x)
 
-    def load_weights(self, weights) -> None:
-        pass
+    def load_weights(self, weights: OrderedDict | None):
+        """
+        Experimental
+        """
+        if weights is None:
+            raise ValueError("Weights passed should be an instance of OrderedDict")
+        self.layers[0].weight = self.assign_nn_parameter((weights["c_fc_weights"]))
+        self.layers[0].bias = self.assign_nn_parameter(weights["c_fc_bias"])
+        self.layers[2].weight = self.assign_nn_parameter(weights["c_proj_weights"])
+        self.layers[2].bias = self.assign_nn_parameter(weights["c_proj_bias"])
 
 
 class MultiHeadAttention(EModule):
@@ -212,8 +235,8 @@ class MultiHeadAttention(EModule):
         # )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """need to fix"""
-        batch_size, num_tokens, _in_shape = x.shape
+        """Experimental"""
+        batch_size, num_tokens, _ = x.shape
         queries = self.wq(x)
         keys = self.wk(x)
         values = self.wv(x)
@@ -240,15 +263,35 @@ class MultiHeadAttention(EModule):
 
         return self.out_form(context_vec)
 
-    def load_weights(self, weights) -> None:
-        pass
+    def load_weights(self, weights: OrderedDict | None):
+        """
+        Experimental
+        """
+        if weights is None:
+            raise ValueError("Weights passed should be an instance of OrderedDict")
+        conv1d_weights = weights["c_attn_weights"]
+        conv1d_bias = weights["c_attn_bias"]
+        c_proj_weight = weights["c_proj_weight"]
+        c_proj_bias = weights["c_proj_bias"]
+        self.wq.weight = self.assign_nn_parameter(conv1d_weights[0].T)
+        self.wq.bias = self.assign_nn_parameter(conv1d_bias[0])
+
+        self.wk.weight = self.assign_nn_parameter(conv1d_weights[1].T)
+        self.wk.bias = self.assign_nn_parameter(conv1d_bias[1])
+
+        self.wv.weight = self.assign_nn_parameter(conv1d_weights[2].T)
+        self.wv.bias = self.assign_nn_parameter(conv1d_bias[2])
+
+        self.out_form.weight = self.assign_nn_parameter(c_proj_weight.T)
+        self.out_form.bias = self.assign_nn_parameter(c_proj_bias)
 
 
 class TransformerBlock(EModule):
     """Experimental"""
 
-    def __init__(self, _gpt_flavor: dict) -> None:
+    def __init__(self, _gpt_flavor: dict, layer_num: int) -> None:
         super().__init__()
+        self.layer_num = layer_num
         self.norm1 = LayerNorm(_gpt_flavor["emb_dim"])
         self.norm2 = LayerNorm(_gpt_flavor["emb_dim"])
         self.mlp = MLPGPT2(_gpt_flavor["emb_dim"])
@@ -274,11 +317,66 @@ class TransformerBlock(EModule):
 
         return x
 
-    def load_weights(self, weights) -> None:
-        pass
+    def load_weights(self, weights: OrderedDict | None):
+        if weights is None:
+            raise ValueError("Weights passed should be an instance of OrderedDict")
+        print(f"Layer: {self.layer_num + 1}\n")
+        print("loading norm1 weights and bias")
+        self.norm1.load_weights(
+            weights=OrderedDict(
+                {
+                    "scale": weights[f"h.{self.layer_num}.ln_1.weight"],
+                    "shift": weights[f"h.{self.layer_num}.ln_1.bias"],
+                }
+            )
+        )
+        print("loading norm2 weights and bias")
+        self.norm2.load_weights(
+            weights=OrderedDict(
+                {
+                    "scale": weights[f"h.{self.layer_num}.ln_2.weight"],
+                    "shift": weights[f"h.{self.layer_num}.ln_2.bias"],
+                }
+            )
+        )
+        print("loading ff weights and bias")
+        self.mlp.load_weights(
+            weights=OrderedDict(
+                {
+                    "c_fc_weights": weights[f"h.{self.layer_num}.mlp.c_fc.weight"].T,
+                    "c_proj_weights": weights[
+                        f"h.{self.layer_num}.mlp.c_proj.weight"
+                    ].T,
+                    "c_fc_bias": weights[f"h.{self.layer_num}.mlp.c_fc.bias"],
+                    "c_proj_bias": weights[f"h.{self.layer_num}.mlp.c_proj.bias"],
+                }
+            )
+        )
+        print("loading attention weights and bias")
+        self.multi_head.load_weights(
+            weights=OrderedDict(
+                {
+                    "c_attn_weights": [
+                        *np.split(
+                            weights[f"h.{self.layer_num}.attn.c_attn.weight"],
+                            3,
+                            axis=-1,
+                        )
+                    ],
+                    "c_attn_bias": [
+                        *np.split(
+                            weights[f"h.{self.layer_num}.attn.c_attn.bias"], 3, axis=-1
+                        )
+                    ],
+                    "c_proj_weight": weights[f"h.{self.layer_num}.attn.c_proj.weight"],
+                    "c_proj_bias": weights[f"h.{self.layer_num}.attn.c_proj.bias"],
+                }
+            )
+        )
+        print("\n")
 
 
-class GPT2(nn.Module):
+class GPT2(EModule):
     """
     GPT2 class that wraps Token Embedding, Positional Embedding, Transformer
     layers.
@@ -294,7 +392,10 @@ class GPT2(nn.Module):
         )
         self.dropout = nn.Dropout(_gpt_flavor["drop_rate"])
         self.transformers = nn.Sequential(
-            *[TransformerBlock(_gpt_flavor) for _ in range(_gpt_flavor["n_layers"])]
+            OrderedDict(
+                (f"layer_{i}", TransformerBlock(_gpt_flavor, i))
+                for i in range(_gpt_flavor["n_layers"])
+            )
         )
         self.final_norm = LayerNorm(_gpt_flavor["emb_dim"])
         self.final_layer = nn.Linear(
@@ -307,7 +408,9 @@ class GPT2(nn.Module):
         tok_embs = self.tok_emb(batch_x)
         pos_embs = self.pos_emb(
             torch.arange(
-                seq_length, device="cuda" if torch.cuda.is_available() else "cpu"
+                seq_length,
+                # Need to change this
+                device="cuda" if torch.cuda.is_available() else "cpu",
             )
         )
 
@@ -336,85 +439,116 @@ class GPT2(nn.Module):
             )
         return torch.nn.Parameter(right.clone().detach())
 
-    # def load_weights(self):
-    #     model = "openai-community/gpt2-xl"
-    #     gpt_hf = GPT2Model.from_pretrained(
-    #         model,
-    #         cache_dir="checkpoints",
-    #     )
-    #     # gpt_hf.eval()
-    #     print("Loading weights")
-    #     d = gpt_hf.state_dict()
+    def load_weights(self, weights=None):
+        """
+        Experimental
+        """
+        weights = None
+        model = chathist.config.huggingface_repo
+        print(f"Repo: {model}.")
+        print("Downloading model from Hugginface...")
+        gpt_hf = GPT2Model.from_pretrained(
+            model,
+            cache_dir="./../../checkpoints",
+            # cache_dir=f"checkpoints_{model.split('/')[1]}",
+        )
+        print("Dowload complete.")
+        gpt_hf.eval()
+        print("Loading weights into model.")
+        gpt_pretrained_weights = gpt_hf.state_dict()
+        self.pos_emb.weight = self.assign_nn_parameter(
+            gpt_pretrained_weights["wpe.weight"]
+        )
 
-    #     self.pos_emb.weight = self.assign_check(self.pos_emb.weight, d["wpe.weight"])
-    #     self.tok_emb.weight = self.assign_check(self.tok_emb.weight, d["wte.weight"])
+        self.tok_emb.weight = self.assign_nn_parameter(
+            gpt_pretrained_weights["wte.weight"]
+        )
+        self.final_norm.load_weights(
+            weights=OrderedDict(
+                {
+                    "scale": gpt_pretrained_weights["ln_f.weight"],
+                    "shift": gpt_pretrained_weights["ln_f.bias"],
+                }
+            )
+        )
+        self.final_layer.weight = self.assign_nn_parameter(
+            gpt_pretrained_weights["wte.weight"]
+        )
 
-    #     for layer in range(self.layers):
-    #         self.transformers[layer].load_weights()
-    #         q_w, k_w, v_w = np.split(d[f"h.{b}.attn.c_attn.weight"], 3, axis=-1)
-    #         self.transformers[b].multi_head.wq.weight = self.assign_check(
-    #             self.transformers[b].multi_head.wq.weight, q_w.T
-    #         )
-    #         self.transformers[b].multi_head.wk.weight = self.assign_check(
-    #             self.transformers[b].multi_head.wk.weight, k_w.T
-    #         )
-    #         self.transformers[b].multi_head.wv.weight = self.assign_check(
-    #             self.transformers[b].multi_head.wv.weight, v_w.T
-    #         )
+        for layer in range(self.layers):
+            transfomer = self.transformers[layer]
+            if isinstance(transfomer, TransformerBlock) and isinstance(
+                gpt_pretrained_weights, OrderedDict
+            ):
+                transfomer.load_weights(gpt_pretrained_weights)
 
-    #         q_b, k_b, v_b = np.split(d[f"h.{b}.attn.c_attn.bias"], 3, axis=-1)
-    #         self.transformers[b].multi_head.wq.bias = self.assign_check(
-    #             self.transformers[b].multi_head.wq.bias, q_b
-    #         )
-    #         self.transformers[b].multi_head.wk.bias = self.assign_check(
-    #             self.transformers[b].multi_head.wk.bias, k_b
-    #         )
-    #         self.transformers[b].multi_head.wv.bias = self.assign_check(
-    #             self.transformers[b].multi_head.wv.bias, v_b
-    #         )
+        # for b in range(self.layers):
+        #     conv1d_weights = np.split(
+        #         gpt_pretrained_weights[f"h.{b}.attn.c_attn.weight"], 3, axis=-1
+        #     )
 
-    #         self.transformers[b].multi_head.out_form.weight = self.assign_check(
-    #             self.transformers[b].multi_head.out_form.weight,
-    #             d[f"h.{b}.attn.c_proj.weight"].T,
-    #         )
-    #         self.transformers[b].multi_head.out_form.bias = self.assign_check(
-    #             self.transformers[b].multi_head.out_form.bias,
-    #             d[f"h.{b}.attn.c_proj.bias"],
-    #         )
+        #     self.transformers[b].multi_head.wq.weight = self.assign_check(
+        #         self.transformers[b].multi_head.wq.weight, conv1d_weights[0].T
+        #     )
+        #     self.transformers[b].multi_head.wk.weight = self.assign_check(
+        #         self.transformers[b].multi_head.wk.weight, conv1d_weights[1].T
+        #     )
+        #     self.transformers[b].multi_head.wv.weight = self.assign_check(
+        #         self.transformers[b].multi_head.wv.weight, conv1d_weights[2].T
+        #     )
 
-    #         self.transformers[b].mlp.layers[0].weight = self.assign_check(
-    #             self.transformers[b].mlp.layers[0].weight, d[f"h.{b}.mlp.c_fc.weight"].T
-    #         )
-    #         self.transformers[b].mlp.layers[0].bias = self.assign_check(
-    #             self.transformers[b].mlp.layers[0].bias, d[f"h.{b}.mlp.c_fc.bias"]
-    #         )
-    #         self.transformers[b].mlp.layers[2].weight = self.assign_check(
-    #             self.transformers[b].mlp.layers[2].weight,
-    #             d[f"h.{b}.mlp.c_proj.weight"].T,
-    #         )
-    #         self.transformers[b].mlp.layers[2].bias = self.assign_check(
-    #             self.transformers[b].mlp.layers[2].bias, d[f"h.{b}.mlp.c_proj.bias"]
-    #         )
+        #     conv1d_bias = np.split(
+        #         gpt_pretrained_weights[f"h.{b}.attn.c_attn.bias"], 3, axis=-1
+        #     )
+        #     self.transformers[b].multi_head.wq.bias = self.assign_check(
+        #         self.transformers[b].multi_head.wq.bias, conv1d_bias[0]
+        #     )
+        #     self.transformers[b].multi_head.wk.bias = self.assign_check(
+        #         self.transformers[b].multi_head.wk.bias, conv1d_bias[1]
+        #     )
+        #     self.transformers[b].multi_head.wv.bias = self.assign_check(
+        #         self.transformers[b].multi_head.wv.bias, conv1d_bias[2]
+        #     )
 
-    #         self.transformers[b].norm1.scale = self.assign_check(
-    #             self.transformers[b].norm1.scale, d[f"h.{b}.ln_1.weight"]
-    #         )
-    #         self.transformers[b].norm1.shift = self.assign_check(
-    #             self.transformers[b].norm1.shift, d[f"h.{b}.ln_1.bias"]
-    #         )
-    #         self.transformers[b].norm2.scale = self.assign_check(
-    #             self.transformers[b].norm2.scale, d[f"h.{b}.ln_2.weight"]
-    #         )
-    #         self.transformers[b].norm2.shift = self.assign_check(
-    #             self.transformers[b].norm2.shift, d[f"h.{b}.ln_2.bias"]
-    #         )
+        #     self.transformers[b].multi_head.out_form.weight = self.assign_check(
+        #         self.transformers[b].multi_head.out_form.weight,
+        #         gpt_pretrained_weights[f"h.{b}.attn.c_proj.weight"].T,
+        #     )
+        #     self.transformers[b].multi_head.out_form.bias = self.assign_check(
+        #         self.transformers[b].multi_head.out_form.bias,
+        #         gpt_pretrained_weights[f"h.{b}.attn.c_proj.bias"],
+        #     )
 
-    #         self.final_norm.scale = self.assign_check(
-    #             self.final_norm.scale, d["ln_f.weight"]
-    #         )
-    #         self.final_norm.shift = self.assign_check(
-    #             self.final_norm.shift, d["ln_f.bias"]
-    #         )
-    #         self.final_layer.weight = self.assign_check(
-    #             self.final_layer.weight, d["wte.weight"]
-    #         )
+        #     self.transformers[b].mlp.layers[0].weight = self.assign_check(
+        #         self.transformers[b].mlp.layers[0].weight,
+        #         gpt_pretrained_weights[f"h.{b}.mlp.c_fc.weight"].T,
+        #     )
+        #     self.transformers[b].mlp.layers[0].bias = self.assign_check(
+        #         self.transformers[b].mlp.layers[0].bias,
+        #         gpt_pretrained_weights[f"h.{b}.mlp.c_fc.bias"],
+        #     )
+        #     self.transformers[b].mlp.layers[2].weight = self.assign_check(
+        #         self.transformers[b].mlp.layers[2].weight,
+        #         gpt_pretrained_weights[f"h.{b}.mlp.c_proj.weight"].T,
+        #     )
+        #     self.transformers[b].mlp.layers[2].bias = self.assign_check(
+        #         self.transformers[b].mlp.layers[2].bias,
+        #         gpt_pretrained_weights[f"h.{b}.mlp.c_proj.bias"],
+        #     )
+
+        #     self.transformers[b].norm1.scale = self.assign_check(
+        #         self.transformers[b].norm1.scale,
+        #         gpt_pretrained_weights[f"h.{b}.ln_1.weight"],
+        #     )
+        #     self.transformers[b].norm1.shift = self.assign_check(
+        #         self.transformers[b].norm1.shift,
+        #         gpt_pretrained_weights[f"h.{b}.ln_1.bias"],
+        #     )
+        #     self.transformers[b].norm2.scale = self.assign_check(
+        #         self.transformers[b].norm2.scale,
+        #         gpt_pretrained_weights[f"h.{b}.ln_2.weight"],
+        #     )
+        #     self.transformers[b].norm2.shift = self.assign_check(
+        #         self.transformers[b].norm2.shift,
+        #         gpt_pretrained_weights[f"h.{b}.ln_2.bias"],
+        #     )
