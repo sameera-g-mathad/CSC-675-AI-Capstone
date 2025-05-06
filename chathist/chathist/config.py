@@ -14,7 +14,7 @@ class Config:
     _response_query: str | None = None
     _ignore_index: int = -100
     _endoftext: int = 50256
-    _dtype = torch.uint16
+    _dtype = torch.int32
     _device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
     # By default the repo is set as the intention of this

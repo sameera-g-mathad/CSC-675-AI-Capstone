@@ -6,6 +6,7 @@ __all__ = [
     "InstructionDataLoader",
     "InstructionDataset",
     "InstructionStyle",
+    "Model",
     "Tokenizer",
     "config",
 ]
@@ -14,6 +15,7 @@ __all__ = [
 from .config import Config
 from .gpt_modules import GPT2
 from .instruction_styling import InstructionStyle
+from .model import Model
 from .processing import InstructionDataLoader, InstructionDataset
 from .tokenizer import Tokenizer
 

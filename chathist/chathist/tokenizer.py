@@ -57,7 +57,7 @@ class Tokenizer:
         >>> tk.decode_ids([10919, 318, 262, 12085, 286, 773, 666, 2106])
         >>> # Output: 'what is the significance of indian history'
         """
-        filterd_ids = [
-            int(id.item()) for id in ids if id != chathist.config.ignore_index
+        filtered_ids = [
+            int(id.item()) for id in ids if id.item() != chathist.config.ignore_index
         ]
-        return self.tokenizer.decode(filterd_ids)
+        return self.tokenizer.decode(filtered_ids)
