@@ -1,5 +1,4 @@
 from .tokenizer import Tokenizer
-from .custom_exception import NotAGPTFlavor
 import torch
 
 
@@ -16,6 +15,8 @@ class Config:
     _ignore_index: int = -100
     _endoftext: int = 50256
     _dtype = torch.uint16
+    _device: str = "cuda" if torch.cuda.is_available() else "cpu"
+
     # By default the repo is set as the intention of this
     # project is to build gpt2 model.
     _hugginface_user = "openai-community"
@@ -51,10 +52,18 @@ class Config:
         are supported values as they serve as the repo names on hugginface as well.
         """
         if flavor not in ["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"]:
-            raise NotAGPTFlavor(
+            raise ValueError(
                 f'{flavor} is not accpted!!! Please pass any one of ["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"]'
             )
         self._gpt_flavor = flavor
+
+    @property
+    def device(self):
+        """
+        Returns the device on which the data can be loaded and trained on.
+        'cuda' or 'cpu' is returned depending on the availability
+        """
+        return self._device
 
     @property
     def gpt_flavor(self):

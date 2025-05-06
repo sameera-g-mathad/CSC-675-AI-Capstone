@@ -6,7 +6,6 @@ __all__ = [
     "InstructionDataLoader",
     "InstructionDataset",
     "InstructionStyle",
-    "NotAGPTFlavor",
     "Tokenizer",
     "config",
 ]
@@ -17,6 +16,5 @@ from .gpt_modules import GPT2
 from .instruction_styling import InstructionStyle
 from .processing import InstructionDataLoader, InstructionDataset
 from .tokenizer import Tokenizer
-from .custom_exception import NotAGPTFlavor
 
 config = Config()

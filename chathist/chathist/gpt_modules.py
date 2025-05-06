@@ -26,7 +26,7 @@ class EModule(nn.Module, ABC):
         """
         Experimental
         """
-        pass
+        raise NotImplementedError("Should be implemented by the subclasses.")
 
 
 class LayerNorm(EModule):
@@ -223,6 +223,7 @@ class MultiHeadAttention(EModule):
                 _gpt_flavor["context_length"],
                 dtype=torch.bool,
                 requires_grad=False,
+                device=chathist.config.device,
             ),
             diagonal=1,
         )
@@ -406,13 +407,7 @@ class GPT2(EModule):
         """Experimental"""
         _, seq_length = batch_x.shape
         tok_embs = self.tok_emb(batch_x)
-        pos_embs = self.pos_emb(
-            torch.arange(
-                seq_length,
-                # Need to change this
-                device="cuda" if torch.cuda.is_available() else "cpu",
-            )
-        )
+        pos_embs = self.pos_emb(torch.arange(seq_length, device=chathist.config.device))
 
         x = tok_embs + pos_embs
         x = self.dropout(x)
