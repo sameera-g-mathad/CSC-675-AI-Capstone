@@ -196,6 +196,7 @@ class InstructionStyle:
         :returns: An Instruction object which is an instance of either `Alpaca` subclass
         or `Phi3` subclass.
         """
+        chathist.config.log.info("%s style chosen!!", style)
         match (style):
             case "alpaca":
                 return Alpaca(
@@ -210,6 +211,9 @@ class InstructionStyle:
                     response_query=response_query,
                 )
 
+        chathist.config.log.warning(
+            "No style chosen!!! Returning default style: Alpaca"
+        )
         return Alpaca(
             prompt=prompt,
             input_query=input_query,

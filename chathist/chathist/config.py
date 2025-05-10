@@ -18,7 +18,7 @@ class Config:
     """
 
     _log: logging.Logger
-    _tokenizer: Tokenizer
+    _tokenizer: Tokenizer | None = None
     _response_query: str
     _ignore_index: int = -100
     _endoftext: int = 50256
@@ -98,7 +98,6 @@ class Config:
         """
         Experimental
         """
-        self._tokenizer = Tokenizer()
 
         if self._compare_dict(self._cfg, "config"):
             if self._compare_dict(self._cfg["config"], "ignore_index"):
@@ -138,6 +137,8 @@ class Config:
 
         :rtype: Tokenizer
         """
+        if self._tokenizer is None:
+            self._tokenizer = Tokenizer()
         return self._tokenizer
 
     @property

@@ -16,6 +16,9 @@ class Tokenizer:
         :examples:
         >>> tk = Tokenizer()
         """
+        chathist.config.log.info(
+            "Setting tokenizer using tiktoken with encoding: %s", encoding
+        )
         self.tokenizer = tiktoken.get_encoding(encoding)
 
     def encode_text(
