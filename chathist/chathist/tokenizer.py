@@ -1,6 +1,6 @@
-import chathist
 import torch
 import tiktoken
+import chathist
 
 
 class Tokenizer:

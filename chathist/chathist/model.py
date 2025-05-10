@@ -4,6 +4,10 @@ from chathist import GPT2
 
 
 class Model:
+    """
+    Experimental
+    """
+
     def __init__(self):
         self._tokenizer = chathist.config.tokenizer
         self._model = GPT2()

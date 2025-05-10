@@ -15,7 +15,7 @@ authors =[{name = "Sameer Gururaj Mathad", email = "smathad@depaul.edu"}]
 
 requires-python = "==3.12.0"
 
-dynamic = ["dependencies"]
+dynamic = ["dependencies", "optional-dependencies"]
 
 readme = "README.md"
 
@@ -26,8 +26,17 @@ keywords = ["gpt2", "loRA", "transformer", "pytorch"]
 
 packages = ["chathist"]
 
+
+[tool.setuptools.package-data]
+"chathist" = ["conf/*.yaml"]
+
+
 [tool.setuptools.dynamic]
 
-dependencies = {file =  ["requirements.txt"]}
+dependencies = {file =  ["requirements/requirements.txt"]}
+
+
+[tools.setuptools.dynamic.optional-dependencies]
+dependencies = {file = ["requirements/requiremnts-dev.txt"]}
 
 

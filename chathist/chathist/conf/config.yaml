@@ -1,0 +1,5 @@
+config:
+  ignore_index: -100
+  endoftext: 50256
+  model_name: 'chat_completion_model'
+  model_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models' # Use your path

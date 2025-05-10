@@ -14,12 +14,23 @@ class EModule(nn.Module, ABC):
 
     def __init__(self) -> None:
         super().__init__()
+        self._device = chathist.config.device
+        self._gpt_flavor = chathist.config.gpt_flavor
+        self._log = chathist.config.log
+        self._model = chathist.config.huggingface_repo
+        self._outdir = chathist.config.outdir
+
+        self._layers = self._gpt_flavor["n_layers"]
 
     def assign_nn_parameter(self, weights: torch.Tensor) -> torch.nn.Parameter:
         """
         Experimental
         """
         return nn.Parameter(weights.clone().detach())
+
+    # def convert_type(self, weights: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+    #     """Experimental"""
+    #     return self.assign_nn_parameter(weights=weights).to(dtype=dtype)
 
     @abstractmethod
     def load_weights(self, weights: OrderedDict | None):
@@ -223,7 +234,7 @@ class MultiHeadAttention(EModule):
                 _gpt_flavor["context_length"],
                 dtype=torch.bool,
                 requires_grad=False,
-                device=chathist.config.device,
+                device=self._device,
             ),
             diagonal=1,
         )
@@ -321,8 +332,8 @@ class TransformerBlock(EModule):
     def load_weights(self, weights: OrderedDict | None):
         if weights is None:
             raise ValueError("Weights passed should be an instance of OrderedDict")
-        print(f"Layer: {self.layer_num + 1}\n")
-        print("loading norm1 weights and bias")
+        self._log.info("Layer: %s\n", self.layer_num + 1)
+        self._log.info("loading norm1 weights and bias")
         self.norm1.load_weights(
             weights=OrderedDict(
                 {
@@ -331,7 +342,7 @@ class TransformerBlock(EModule):
                 }
             )
         )
-        print("loading norm2 weights and bias")
+        self._log.info("loading norm2 weights and bias")
         self.norm2.load_weights(
             weights=OrderedDict(
                 {
@@ -340,7 +351,7 @@ class TransformerBlock(EModule):
                 }
             )
         )
-        print("loading ff weights and bias")
+        self._log.info("loading ff weights and bias")
         self.mlp.load_weights(
             weights=OrderedDict(
                 {
@@ -353,7 +364,7 @@ class TransformerBlock(EModule):
                 }
             )
         )
-        print("loading attention weights and bias")
+        self._log.info("loading attention weights and bias")
         self.multi_head.load_weights(
             weights=OrderedDict(
                 {
@@ -374,7 +385,6 @@ class TransformerBlock(EModule):
                 }
             )
         )
-        print("\n")
 
 
 class GPT2(EModule):
@@ -385,29 +395,30 @@ class GPT2(EModule):
 
     def __init__(self) -> None:
         super().__init__()
-        _gpt_flavor = chathist.config.gpt_flavor
-        self.layers = _gpt_flavor["n_layers"]
-        self.tok_emb = nn.Embedding(_gpt_flavor["vocab_size"], _gpt_flavor["emb_dim"])
-        self.pos_emb = nn.Embedding(
-            _gpt_flavor["context_length"], _gpt_flavor["emb_dim"]
+
+        self.tok_emb = nn.Embedding(
+            self._gpt_flavor["vocab_size"], self._gpt_flavor["emb_dim"]
         )
-        self.dropout = nn.Dropout(_gpt_flavor["drop_rate"])
+        self.pos_emb = nn.Embedding(
+            self._gpt_flavor["context_length"], self._gpt_flavor["emb_dim"]
+        )
+        self.dropout = nn.Dropout(self._gpt_flavor["drop_rate"])
         self.transformers = nn.Sequential(
             OrderedDict(
-                (f"layer_{i}", TransformerBlock(_gpt_flavor, i))
-                for i in range(_gpt_flavor["n_layers"])
+                (f"layer_{i}", TransformerBlock(self._gpt_flavor, i))
+                for i in range(self._gpt_flavor["n_layers"])
             )
         )
-        self.final_norm = LayerNorm(_gpt_flavor["emb_dim"])
+        self.final_norm = LayerNorm(self._gpt_flavor["emb_dim"])
         self.final_layer = nn.Linear(
-            _gpt_flavor["emb_dim"], _gpt_flavor["vocab_size"], bias=False
+            self._gpt_flavor["emb_dim"], self._gpt_flavor["vocab_size"], bias=False
         )
 
     def forward(self, batch_x):
         """Experimental"""
         _, seq_length = batch_x.shape
         tok_embs = self.tok_emb(batch_x)
-        pos_embs = self.pos_emb(torch.arange(seq_length, device=chathist.config.device))
+        pos_embs = self.pos_emb(torch.arange(seq_length, device=self._device))
 
         x = tok_embs + pos_embs
         x = self.dropout(x)
@@ -424,32 +435,30 @@ class GPT2(EModule):
 
         return total
 
-    def assign_check(self, left, right):
-        """
-        Experimental
-        """
-        if left.shape != right.shape:
-            raise ValueError(
-                f"Shape mismatch. Left: {left.shape}, Right: {right.shape}"
-            )
-        return torch.nn.Parameter(right.clone().detach())
+    # def assign_check(self, left, right):
+    #     """
+    #     Experimental
+    #     """
+    #     if left.shape != right.shape:
+    #         raise ValueError(
+    #             f"Shape mismatch. Left: {left.shape}, Right: {right.shape}"
+    #         )
+    #     return torch.nn.Parameter(right.clone().detach())
 
     def load_weights(self, weights=None):
         """
         Experimental
         """
-        weights = None
-        model = chathist.config.huggingface_repo
-        print(f"Repo: {model}.")
-        print("Downloading model from Hugginface...")
+        self._log.info("Repo: %s.", self._model)
+        self._log.info("Downloading model from Hugginface...")
         gpt_hf = GPT2Model.from_pretrained(
-            model,
-            cache_dir="./../../checkpoints",
+            self._model,
+            cache_dir=self._outdir,
             # cache_dir=f"checkpoints_{model.split('/')[1]}",
         )
-        print("Dowload complete.")
+        self._log.info("Dowload complete.")
         gpt_hf.eval()
-        print("Loading weights into model.")
+        self._log.info("Loading weights into model.")
         gpt_pretrained_weights = gpt_hf.state_dict()
         self.pos_emb.weight = self.assign_nn_parameter(
             gpt_pretrained_weights["wpe.weight"]
@@ -470,7 +479,7 @@ class GPT2(EModule):
             gpt_pretrained_weights["wte.weight"]
         )
 
-        for layer in range(self.layers):
+        for layer in range(self._layers):
             transfomer = self.transformers[layer]
             if isinstance(transfomer, TransformerBlock) and isinstance(
                 gpt_pretrained_weights, OrderedDict
