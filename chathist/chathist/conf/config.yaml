@@ -1,5 +1,13 @@
 config:
   ignore_index: -100
   endoftext: 50256
-  model_name: 'chat_completion_model'
-  model_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models' # Use your path
+  gpt_flavor: 'gpt2-xl'
+  model_name: 'gpt2-xl'
+  model_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models/pretrained'
+  save_as: 'gpt2_history_finetuned'
+  save_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models/finetuned'
+
+lora:
+  use_lora: True
+  alpha: 10
+  rank: 10

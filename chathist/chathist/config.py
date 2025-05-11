@@ -24,8 +24,17 @@ class Config:
     _endoftext: int = 50256
     _dtype = torch.int32
     _device: str = "cuda" if torch.cuda.is_available() else "cpu"
+
+    #
     _model_name: str
     _model_path: str
+    _save_as: str
+    _save_path: str
+
+    #
+    _use_lora: bool
+    _lora_rank: int
+    _lora_alpha: float
 
     # By default the repo is set as the intention of this
     # project is to build gpt2 model.
@@ -98,7 +107,6 @@ class Config:
         """
         Experimental
         """
-
         if self._compare_dict(self._cfg, "config"):
             if self._compare_dict(self._cfg["config"], "ignore_index"):
                 self._ignore_index = self._cfg["config"]["ignore_index"]
@@ -106,11 +114,11 @@ class Config:
             if self._compare_dict(self._cfg["config"], "endoftext"):
                 self._endoftext = self._cfg["config"]["endoftext"]
 
-            if self._compare_dict(self._cfg["config"], "dtype"):
-                self._dtype = self._cfg["config"]["dtype"]
+            # if self._compare_dict(self._cfg["config"], "dtype"):
+            #     self._dtype = self._cfg["config"]["dtype"]
 
-            if self._compare_dict(self._cfg["config"], "device"):
-                self._device = self._cfg["config"]["device"]
+            # if self._compare_dict(self._cfg["config"], "device"):
+            #     self._device = self._cfg["config"]["device"]
 
             if self._compare_dict(self._cfg["config"], "gpt_flavor"):
                 self._gpt_flavor = self._cfg["config"]["gpt_flavor"]
@@ -120,6 +128,22 @@ class Config:
 
             if self._compare_dict(self._cfg["config"], "model_path", raise_error=True):
                 self._model_path = self._cfg["config"]["model_path"]
+
+            if self._compare_dict(self._cfg["config"], "save_as", raise_error=True):
+                self._save_as = self._cfg["config"]["save_as"]
+
+            if self._compare_dict(self._cfg["config"], "save_path", raise_error=True):
+                self._save_path = self._cfg["config"]["save_path"]
+
+        if self._compare_dict(self._cfg, "lora"):
+            if self._compare_dict(self._cfg["lora"], "use_lora"):
+                self._use_lora = self._cfg["lora"]["use_lora"]
+
+            if self._compare_dict(self._cfg["lora"], "rank"):
+                self._lora_rank = self._cfg["lora"]["rank"]
+
+            if self._compare_dict(self._cfg["lora"], "alpha"):
+                self._lora_alpha = self._cfg["lora"]["alpha"]
 
     @property
     def log(self):
@@ -210,6 +234,27 @@ class Config:
         Returns the stored or default ignore index back.
         """
         return self._ignore_index
+
+    @property
+    def use_lora(self):
+        """
+        Experimental
+        """
+        return self._use_lora
+
+    @property
+    def lora_alpha(self):
+        """
+        Experimental
+        """
+        return self._lora_alpha
+
+    @property
+    def lora_rank(self):
+        """
+        Experimental
+        """
+        return self._lora_rank
 
     def _set_response_query(self, response_query: str) -> None:
         """

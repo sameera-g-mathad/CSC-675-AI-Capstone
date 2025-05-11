@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 import numpy as np
@@ -19,6 +20,7 @@ class EModule(nn.Module, ABC):
         self._log = chathist.config.log
         self._model = chathist.config.huggingface_repo
         self._outdir = chathist.config.outdir
+        self._use_lora = chathist.config.use_lora
 
         self._layers = self._gpt_flavor["n_layers"]
 
@@ -119,8 +121,11 @@ class LoRA(nn.Module):
     Instead smaller weights (here matrix A and B) are stored and trained.
     """
 
-    def __init__(self, in_dim, rank, out_dim, alpha):
+    def __init__(self, in_dim, out_dim):
         super().__init__()
+        rank = chathist.config.lora_rank
+        alpha = chathist.config.lora_alpha
+
         self.a_matrix = nn.Parameter(torch.empty(in_dim, rank))
         torch.nn.init.kaiming_uniform_(
             self.a_matrix, a=torch.sqrt(torch.tensor(5)).item()
@@ -135,7 +140,7 @@ class LoRA(nn.Module):
 
         LoRA multiplication is done here.
         """
-        return self.alpha * (self.a_matrix @ self.b_matrix @ x)
+        return self.alpha * (x @ self.a_matrix @ self.b_matrix)
 
 
 class LinearLoRA(nn.Module):
@@ -144,11 +149,17 @@ class LinearLoRA(nn.Module):
     that adds additional loRa weights.
     """
 
-    def __init__(self, linear_layer: nn.Linear, rank, alpha):
+    def __init__(self, linear_layer: nn.Linear):
         super().__init__()
+
         self.linear_layer = linear_layer
+
+        self.linear_layer.weight.requires_grad = False
+        if self.linear_layer.bias is not None:
+            self.linear_layer.bias.requires_grad = False
+
         in_features, out_features = linear_layer.in_features, linear_layer.out_features
-        self.lora = LoRA(in_features, rank, out_features, alpha)
+        self.lora = LoRA(in_features, out_features)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -171,9 +182,12 @@ class MLPGPT2(EModule):
     def __init__(self, emb_dim: int) -> None:
         super().__init__()
         out_dim = emb_dim * 4
-        self.layers = nn.Sequential(
-            nn.Linear(emb_dim, out_dim), GeLU(), nn.Linear(out_dim, emb_dim)
-        )
+        # self.layers = nn.Sequential(
+        #     nn.Linear(emb_dim, out_dim), GeLU(), nn.Linear(out_dim, emb_dim)
+        # )
+        self.layer1 = nn.Linear(emb_dim, out_dim)
+        self.gelu = GeLU()
+        self.layer2 = nn.Linear(out_dim, emb_dim)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -183,7 +197,7 @@ class MLPGPT2(EModule):
         The inputs pass through this feedforward layers and
         returns the outputs of same dimensions as that of inputs.
         """
-        return self.layers(x)
+        return self.layer2(self.gelu(self.layer1(x)))
 
     def load_weights(self, weights: OrderedDict | None):
         """
@@ -191,10 +205,17 @@ class MLPGPT2(EModule):
         """
         if weights is None:
             raise ValueError("Weights passed should be an instance of OrderedDict")
-        self.layers[0].weight = self.assign_nn_parameter((weights["c_fc_weights"]))
-        self.layers[0].bias = self.assign_nn_parameter(weights["c_fc_bias"])
-        self.layers[2].weight = self.assign_nn_parameter(weights["c_proj_weights"])
-        self.layers[2].bias = self.assign_nn_parameter(weights["c_proj_bias"])
+        self.layer1.weight = self.assign_nn_parameter((weights["c_fc_weights"]))
+        self.layer1.bias = self.assign_nn_parameter(weights["c_fc_bias"])
+        self.layer2.weight = self.assign_nn_parameter(weights["c_proj_weights"])
+        self.layer2.bias = self.assign_nn_parameter(weights["c_proj_bias"])
+
+        if self._use_lora:
+            self._log.info("Using LoRA weights for ff layers!!")
+            if isinstance(self.layer1, nn.Linear):
+                self.layer1 = LinearLoRA(self.layer1)
+            if isinstance(self.layer2, nn.Linear):
+                self.layer2 = LinearLoRA(self.layer2)
 
 
 class MultiHeadAttention(EModule):
@@ -238,13 +259,6 @@ class MultiHeadAttention(EModule):
             ),
             diagonal=1,
         )
-        # self.register_buffer(
-        #     "mask",
-        #     torch.triu(
-        #         torch.ones(_gpt_flavor["context_length"], _gpt_flavor["context_length"]),
-        #         diagonal=1,
-        #     ),
-        # )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Experimental"""
@@ -297,6 +311,17 @@ class MultiHeadAttention(EModule):
         self.out_form.weight = self.assign_nn_parameter(c_proj_weight.T)
         self.out_form.bias = self.assign_nn_parameter(c_proj_bias)
 
+        if self._use_lora:
+            self._log.info("Using LoRA weights for multi head layers!!")
+            if isinstance(self.wq, torch.nn.modules.linear.Linear):
+                self.wq = LinearLoRA(self.wq)
+            if isinstance(self.wk, nn.Linear):
+                self.wk = LinearLoRA(self.wk)
+            if isinstance(self.wv, nn.Linear):
+                self.wv = LinearLoRA(self.wv)
+            if isinstance(self.out_form, nn.Linear):
+                self.out_form = LinearLoRA(self.out_form)
+
 
 class TransformerBlock(EModule):
     """Experimental"""
@@ -332,7 +357,7 @@ class TransformerBlock(EModule):
     def load_weights(self, weights: OrderedDict | None):
         if weights is None:
             raise ValueError("Weights passed should be an instance of OrderedDict")
-        self._log.info("Layer: %s\n", self.layer_num + 1)
+        self._log.info("Layer: %s", self.layer_num + 1)
         self._log.info("loading norm1 weights and bias")
         self.norm1.load_weights(
             weights=OrderedDict(
@@ -445,18 +470,35 @@ class GPT2(EModule):
     #         )
     #     return torch.nn.Parameter(right.clone().detach())
 
-    def load_weights(self, weights=None):
+    def download_model(self) -> GPT2Model:
         """
         Experimental
         """
         self._log.info("Repo: %s.", self._model)
-        self._log.info("Downloading model from Hugginface...")
+        path_exists = False
+        if os.path.exists(self._outdir):
+            path_exists = True
+        if not path_exists:
+            self._log.info("Downloading %s from Hugginface...", self._model)
+        else:
+            self._log.info(
+                "%s exists in %s. Skipping Download...", self._model, self._outdir
+            )
         gpt_hf = GPT2Model.from_pretrained(
             self._model,
             cache_dir=self._outdir,
             # cache_dir=f"checkpoints_{model.split('/')[1]}",
         )
-        self._log.info("Dowload complete.")
+        if not path_exists:
+            self._log.info("Dowload complete.")
+
+        return gpt_hf
+
+    def load_weights(self, _=None):
+        """
+        Experimental
+        """
+        gpt_hf = self.download_model()
         gpt_hf.eval()
         self._log.info("Loading weights into model.")
         gpt_pretrained_weights = gpt_hf.state_dict()
@@ -479,80 +521,14 @@ class GPT2(EModule):
             gpt_pretrained_weights["wte.weight"]
         )
 
+        if self._use_lora:
+            if isinstance(self.final_layer, nn.Linear):
+                self._log.info("Using Lora for final output layer!!")
+                self.final_layer = LinearLoRA(self.final_layer)
+
         for layer in range(self._layers):
             transfomer = self.transformers[layer]
             if isinstance(transfomer, TransformerBlock) and isinstance(
                 gpt_pretrained_weights, OrderedDict
             ):
                 transfomer.load_weights(gpt_pretrained_weights)
-
-        # for b in range(self.layers):
-        #     conv1d_weights = np.split(
-        #         gpt_pretrained_weights[f"h.{b}.attn.c_attn.weight"], 3, axis=-1
-        #     )
-
-        #     self.transformers[b].multi_head.wq.weight = self.assign_check(
-        #         self.transformers[b].multi_head.wq.weight, conv1d_weights[0].T
-        #     )
-        #     self.transformers[b].multi_head.wk.weight = self.assign_check(
-        #         self.transformers[b].multi_head.wk.weight, conv1d_weights[1].T
-        #     )
-        #     self.transformers[b].multi_head.wv.weight = self.assign_check(
-        #         self.transformers[b].multi_head.wv.weight, conv1d_weights[2].T
-        #     )
-
-        #     conv1d_bias = np.split(
-        #         gpt_pretrained_weights[f"h.{b}.attn.c_attn.bias"], 3, axis=-1
-        #     )
-        #     self.transformers[b].multi_head.wq.bias = self.assign_check(
-        #         self.transformers[b].multi_head.wq.bias, conv1d_bias[0]
-        #     )
-        #     self.transformers[b].multi_head.wk.bias = self.assign_check(
-        #         self.transformers[b].multi_head.wk.bias, conv1d_bias[1]
-        #     )
-        #     self.transformers[b].multi_head.wv.bias = self.assign_check(
-        #         self.transformers[b].multi_head.wv.bias, conv1d_bias[2]
-        #     )
-
-        #     self.transformers[b].multi_head.out_form.weight = self.assign_check(
-        #         self.transformers[b].multi_head.out_form.weight,
-        #         gpt_pretrained_weights[f"h.{b}.attn.c_proj.weight"].T,
-        #     )
-        #     self.transformers[b].multi_head.out_form.bias = self.assign_check(
-        #         self.transformers[b].multi_head.out_form.bias,
-        #         gpt_pretrained_weights[f"h.{b}.attn.c_proj.bias"],
-        #     )
-
-        #     self.transformers[b].mlp.layers[0].weight = self.assign_check(
-        #         self.transformers[b].mlp.layers[0].weight,
-        #         gpt_pretrained_weights[f"h.{b}.mlp.c_fc.weight"].T,
-        #     )
-        #     self.transformers[b].mlp.layers[0].bias = self.assign_check(
-        #         self.transformers[b].mlp.layers[0].bias,
-        #         gpt_pretrained_weights[f"h.{b}.mlp.c_fc.bias"],
-        #     )
-        #     self.transformers[b].mlp.layers[2].weight = self.assign_check(
-        #         self.transformers[b].mlp.layers[2].weight,
-        #         gpt_pretrained_weights[f"h.{b}.mlp.c_proj.weight"].T,
-        #     )
-        #     self.transformers[b].mlp.layers[2].bias = self.assign_check(
-        #         self.transformers[b].mlp.layers[2].bias,
-        #         gpt_pretrained_weights[f"h.{b}.mlp.c_proj.bias"],
-        #     )
-
-        #     self.transformers[b].norm1.scale = self.assign_check(
-        #         self.transformers[b].norm1.scale,
-        #         gpt_pretrained_weights[f"h.{b}.ln_1.weight"],
-        #     )
-        #     self.transformers[b].norm1.shift = self.assign_check(
-        #         self.transformers[b].norm1.shift,
-        #         gpt_pretrained_weights[f"h.{b}.ln_1.bias"],
-        #     )
-        #     self.transformers[b].norm2.scale = self.assign_check(
-        #         self.transformers[b].norm2.scale,
-        #         gpt_pretrained_weights[f"h.{b}.ln_2.weight"],
-        #     )
-        #     self.transformers[b].norm2.shift = self.assign_check(
-        #         self.transformers[b].norm2.shift,
-        #         gpt_pretrained_weights[f"h.{b}.ln_2.bias"],
-        #     )
