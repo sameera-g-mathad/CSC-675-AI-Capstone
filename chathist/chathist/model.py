@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 import chathist
 from chathist import GPT2
@@ -8,12 +9,63 @@ class Model:
     Experimental
     """
 
-    def __init__(self):
-        self._tokenizer = chathist.config.tokenizer
-        self._model = GPT2()
-        self._model.load_weights()
+    _tokenizer: chathist.tokenizer.Tokenizer
+    _model: GPT2
+    _device: str
 
-    # def
+    _train_loader: torch.utils.data.DataLoader
+    _val_loader: torch.utils.data.DataLoader | None = None
+
+    _epochs: int = 2
+    _optimizer: torch.optim.Optimizer
+    _loss: torch.nn.CrossEntropyLoss
+    _learning_rate: float
+
+    def __init__(
+        self,
+        train_loader: torch.utils.data.DataLoader,
+        val_loader: Optional[torch.utils.data.DataLoader],
+    ):
+        self._tokenizer = chathist.config.tokenizer
+        self._device = chathist.config.device
+        self._learning_rate = chathist.config.lr
+        self._epochs = chathist.config.epochs
+
+        self._model = GPT2()
+        self._optimizer = torch.optim.Adam(
+            self._model.parameters(), lr=self._learning_rate
+        )
+        self._loss = torch.nn.CrossEntropyLoss()
+
+        self._model.load_weights()
+        self._train_loader = train_loader
+        if val_loader is not None:
+            self._val_loader = val_loader
+
+    def train(self):
+        """
+        Experimental
+        """
+        self._model.to(self._device)
+
+        for _ in range(self._epochs):
+            self._model.train()
+            for i, (inputs, targets) in enumerate(self._train_loader):
+                print(i, inputs, targets)
+
+            #     inputs.to(self._device)
+            #     targets.to(self._device)
+
+            #     self._optimizer.zero_grad()
+
+            #     logits = self._model(inputs)
+            #     loss: torch.Tensor = self._loss(logits, targets)
+
+            #     loss.backward()
+            #     self._optimizer.step()
+
+            # self._model.eval()
+            # with torch.inference_mode():
 
     def generate(self, prompt: str) -> str:
         """Experimental"""

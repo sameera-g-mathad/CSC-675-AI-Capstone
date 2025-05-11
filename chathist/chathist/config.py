@@ -36,6 +36,10 @@ class Config:
     _lora_rank: int
     _lora_alpha: float
 
+    #
+    _epochs: int = 3
+    _learning_rate: float = 0.01
+
     # By default the repo is set as the intention of this
     # project is to build gpt2 model.
     _hugginface_user = "openai-community"
@@ -79,7 +83,7 @@ class Config:
         self,
         config_path: str = "conf",
         config_name: str = "config",
-        defaults: str = "experiments",
+        defaults: str = "train",
     ):
         """
         Experimental
@@ -154,6 +158,15 @@ class Config:
 
             if self._compare_dict(self._cfg["lora"], "alpha"):
                 self._lora_alpha = self._cfg["lora"]["alpha"]
+
+        if self._compare_dict(self._cfg, "train"):
+            if self._compare_dict(self._cfg["train"], "epochs", raise_error=True):
+                self._epochs = self._cfg["train"]["epochs"]
+
+            if self._compare_dict(
+                self._cfg["train"], "learning_rate", raise_error=True
+            ):
+                self._learning_rate = self._cfg["train"]["learning_rate"]
 
     @property
     def log(self):
@@ -265,6 +278,16 @@ class Config:
         Experimental
         """
         return self._lora_rank
+
+    @property
+    def lr(self):
+        """Experiment"""
+        return self._learning_rate
+
+    @property
+    def epochs(self):
+        """Experiment"""
+        return self._epochs
 
     def _set_response_query(self, response_query: str) -> None:
         """

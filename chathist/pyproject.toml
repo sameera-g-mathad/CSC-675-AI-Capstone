@@ -26,9 +26,9 @@ keywords = ["gpt2", "loRA", "transformer", "pytorch"]
 
 packages = ["chathist"]
 
-
+# make sure to have a folder conf and subfolder train to work.
 [tool.setuptools.package-data]
-"chathist" = ["conf/*.yaml", "conf/experiments/*.yaml"]
+"chathist" = ["conf/*.yaml", "conf/train/*.yaml"]
 
 
 [tool.setuptools.dynamic]

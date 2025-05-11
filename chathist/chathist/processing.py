@@ -32,7 +32,7 @@ class InstructionDataLoader:
         self._endoftext = chathist.config.endoftext
         self._response_ids = chathist.config.response_ids
 
-    def _custom_collate(self, batch, _endoftext=50256, mask_input: bool = False):
+    def _custom_collate(self, batch, mask_input: bool = False):
         """
         Experimental
         """
