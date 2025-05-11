@@ -93,7 +93,6 @@ class Config:
             self._cfg.update(self._cfg.pop(defaults))
             OmegaConf.set_struct(self._cfg, True)
 
-        print(self._cfg)
         self._initialize()
 
     def _compare_dict(
