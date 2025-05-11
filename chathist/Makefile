@@ -12,6 +12,10 @@ install:
 	${PYTHON_INTERPRETER}${PYTHON_VERSION}  --version
 	pip3 install .
 
+install_dev:
+	${PYTHON_INTERPRETER}${PYTHON_VERSION}  --version
+	pip3 install .[dev]
+
 pipreqs:
 	pipreqs . --force --scan-notebooks --savepath requirements/requirements.txt
 

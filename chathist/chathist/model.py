@@ -13,11 +13,13 @@ class Model:
         self._model = GPT2()
         self._model.load_weights()
 
+    # def
+
     def generate(self, prompt: str) -> str:
         """Experimental"""
         token_ids = self._tokenizer.encode_text(prompt)
         token_ids = torch.unsqueeze(token_ids, dim=0)
-
+        self._model.eval()
         for _ in range(30):
             with torch.inference_mode():
                 logits = self._model(token_ids)  # (1, token_len, emb_dim)

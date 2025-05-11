@@ -1,5 +1,5 @@
 import logging
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from .tokenizer import Tokenizer
 import torch
 from hydra import initialize, compose
@@ -75,14 +75,25 @@ class Config:
     }
     _gpt_flavor: str = "gpt2-xl"
 
-    def __init__(self):
+    def __init__(
+        self,
+        config_path: str = "conf",
+        config_name: str = "config",
+        defaults: str = "experiments",
+    ):
         """
         Experimental
         """
         self._log = logging.getLogger(__name__)
-        with initialize(config_path="conf", version_base=None):
-            self._cfg = compose(config_name="config")
+        with initialize(config_path=config_path, version_base=None):
+            self._cfg = compose(config_name=config_name)
 
+        if defaults in self._cfg:
+            OmegaConf.set_struct(self._cfg, False)
+            self._cfg.update(self._cfg.pop(defaults))
+            OmegaConf.set_struct(self._cfg, True)
+
+        print(self._cfg)
         self._initialize()
 
     def _compare_dict(

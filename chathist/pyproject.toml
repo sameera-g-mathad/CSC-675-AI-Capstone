@@ -28,15 +28,14 @@ packages = ["chathist"]
 
 
 [tool.setuptools.package-data]
-"chathist" = ["conf/*.yaml"]
+"chathist" = ["conf/*.yaml", "conf/experiments/*.yaml"]
 
 
 [tool.setuptools.dynamic]
-
 dependencies = {file =  ["requirements/requirements.txt"]}
 
 
-[tools.setuptools.dynamic.optional-dependencies]
-dependencies = {file = ["requirements/requiremnts-dev.txt"]}
+[tool.setuptools.dynamic.optional-dependencies]
+dev = {file = ["requirements/requirements-dev.txt"]}
 
 

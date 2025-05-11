@@ -19,4 +19,5 @@ from .model import Model
 from .processing import InstructionDataLoader, InstructionDataset
 from .tokenizer import Tokenizer
 
-config = Config()
+
+config = Config(config_path="conf", config_name="config")

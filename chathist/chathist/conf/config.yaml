@@ -1,3 +1,7 @@
+defaults:
+  - _self_ # (Suppresses) UserWarning: In 'config': Defaults list is missing `_self_`.
+  - experiments: exp1
+
 config:
   ignore_index: -100
   endoftext: 50256
