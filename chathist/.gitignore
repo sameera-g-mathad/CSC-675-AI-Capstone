@@ -1,0 +1,14 @@
+*checkpoints*
+*__pycache__*
+*.DS*
+*archive*
+*venv*
+*egg*
+
+*build*
+
+example.ipynb
+
+*.vscode*
+
+/models
