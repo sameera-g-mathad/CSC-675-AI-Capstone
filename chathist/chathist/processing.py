@@ -76,7 +76,6 @@ class InstructionDataLoader:
             ), "Input and targets should have equal length"
 
             if mask_input:
-                chathist.config.log.info("Masking inputs upto response query!!!")
                 _target = self._mask(_target, self._response_ids)
             _inputs.append(_input)
             _targets.append(_target)

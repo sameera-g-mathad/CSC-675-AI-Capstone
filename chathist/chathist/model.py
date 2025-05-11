@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 import torch
 import chathist
 from chathist import GPT2
@@ -9,28 +10,23 @@ class Model:
     Experimental
     """
 
-    _tokenizer: chathist.tokenizer.Tokenizer
-    _model: GPT2
     _device: str
-
-    _train_loader: torch.utils.data.DataLoader
-    _val_loader: torch.utils.data.DataLoader | None = None
-
     _epochs: int = 2
-    _optimizer: torch.optim.Optimizer
-    _loss: torch.nn.CrossEntropyLoss
     _learning_rate: float
+    _log: logging.Logger
+    _loss: torch.nn.CrossEntropyLoss
+    _model: GPT2
+    _optimizer: torch.optim.Optimizer
+    _tokenizer: chathist.tokenizer.Tokenizer
 
     def __init__(
         self,
-        train_loader: torch.utils.data.DataLoader,
-        val_loader: Optional[torch.utils.data.DataLoader],
     ):
         self._tokenizer = chathist.config.tokenizer
         self._device = chathist.config.device
         self._learning_rate = chathist.config.lr
         self._epochs = chathist.config.epochs
-
+        self._log = chathist.config.log
         self._model = GPT2()
         self._optimizer = torch.optim.Adam(
             self._model.parameters(), lr=self._learning_rate
@@ -38,34 +34,62 @@ class Model:
         self._loss = torch.nn.CrossEntropyLoss()
 
         self._model.load_weights()
-        self._train_loader = train_loader
-        if val_loader is not None:
-            self._val_loader = val_loader
 
-    def train(self):
+    def calc_loss(self, logits: torch.Tensor, targets: torch.Tensor):
+        """Experiment"""
+        return self._loss(logits.flatten(0, 1), targets.flatten().long())
+
+    def evaluate(self, _loader: torch.utils.data.DataLoader):
+        """Experimental"""
+        self._model.eval()
+        total_loss = 0.0
+        # Since index starts from 0 below
+        batches = 1
+        with torch.inference_mode():
+            for i, (inputs, targets) in enumerate(_loader):
+                inputs.to(self._device)
+                targets.to(self._device)
+                logits = self._model(inputs)
+                loss: torch.Tensor = self.calc_loss(logits, targets)
+                total_loss += loss
+                batches += i
+            return total_loss / batches
+
+    def train(
+        self,
+        train_loader: torch.utils.data.DataLoader,
+        val_loader: Optional[torch.utils.data.DataLoader],
+    ):
         """
         Experimental
         """
+        eval_freq = 5
         self._model.to(self._device)
+        train_loss: list = []
+        val_loss: list | None = None if val_loader is None else []
 
-        for _ in range(self._epochs):
+        for epoch in range(self._epochs):
             self._model.train()
-            for i, (inputs, targets) in enumerate(self._train_loader):
-                print(i, inputs, targets)
+            self._log.info("Epoch %s", epoch + 1)
+            for i, (inputs, targets) in enumerate(train_loader):
+                self._log.info("Batch %s", i + 1)
+                inputs.to(self._device)
+                targets.to(self._device)
 
-            #     inputs.to(self._device)
-            #     targets.to(self._device)
+                self._optimizer.zero_grad()
 
-            #     self._optimizer.zero_grad()
+                logits: torch.Tensor = self._model.forward(inputs)
 
-            #     logits = self._model(inputs)
-            #     loss: torch.Tensor = self._loss(logits, targets)
+                loss: torch.Tensor = self.calc_loss(logits=logits, targets=targets)
 
-            #     loss.backward()
-            #     self._optimizer.step()
+                loss.backward()
+                self._optimizer.step()
 
-            # self._model.eval()
-            # with torch.inference_mode():
+                if i % eval_freq == 0:
+                    train_loss.append(self.evaluate(train_loader))
+                    if val_loader is not None and val_loss is not None:
+                        val_loss.append(self.evaluate(val_loader))
+        return train_loss, val_loss
 
     def generate(self, prompt: str) -> str:
         """Experimental"""
