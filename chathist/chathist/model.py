@@ -28,15 +28,20 @@ class Model:
         self._epochs = chathist.config.epochs
         self._log = chathist.config.log
         self._model = GPT2()
-        self._optimizer = torch.optim.Adam(
-            self._model.parameters(), lr=self._learning_rate
+        self._optimizer = torch.optim.AdamW(
+            self._model.parameters(), lr=self._learning_rate, weight_decay= 0.0001
         )
         self._loss = torch.nn.CrossEntropyLoss()
 
         self._model.load_weights()
 
-    def calc_loss(self, logits: torch.Tensor, targets: torch.Tensor):
+    def calc_loss(self, inputs: torch.Tensor, targets: torch.Tensor):
         """Experiment"""
+        inputs = inputs.to(self._device)
+        targets = targets.to(self._device)
+        logits = self._model(inputs)
+
+        # pylint: disable=no-member
         return self._loss(logits.flatten(0, 1), targets.flatten().long())
 
 
@@ -47,14 +52,12 @@ class Model:
         # Since index starts from 0 below
         batches = 0
         with torch.inference_mode():
-            for i, (inputs, targets) in enumerate(_loader):
-                inputs = inputs.to(self._device)
-                targets = targets.to(self._device)
-                logits = self._model(inputs)
-                loss: torch.Tensor = self.calc_loss(logits, targets)
+            for inputs, targets in _loader:
+                loss: torch.Tensor = self.calc_loss(inputs, targets)
                 total_loss += loss.item()
                 batches += 1
-            return total_loss / batches
+        self._model.train()
+        return total_loss / batches
 
     def train(
         self,
@@ -64,7 +67,6 @@ class Model:
         """
         Experimental
         """
-        eval_freq = 5
         self._model.to(self._device)
         train_loss: list = []
         val_loss: list | None = None if val_loader is None else []
@@ -74,23 +76,18 @@ class Model:
             self._log.info("Epoch %s", epoch + 1)
             for i, (inputs, targets) in enumerate(train_loader):
                 # self._log.info("Batch %s", i + 1)
-                inputs = inputs.to(self._device)
-                targets = targets.to(self._device)
 
                 self._optimizer.zero_grad()
 
-                logits: torch.Tensor = self._model.forward(inputs)
+                loss: torch.Tensor = self.calc_loss(inputs=inputs, targets=targets)
 
-                loss: torch.Tensor = self.calc_loss(logits=logits, targets=targets)
-                if (i + 1) % 10 == 0:
-                    self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
                 loss.backward()
+
                 self._optimizer.step()
 
-                # if i % eval_freq == 0:
-                #     train_loss.append(self.evaluate(train_loader))
-                #     if val_loader is not None and val_loss is not None:
-                #         val_loss.append(self.evaluate(val_loader))
+                if (i + 1) % 10 == 0:
+                    self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
+
         return train_loss, val_loss
 
     def generate(self, prompt: str) -> str:

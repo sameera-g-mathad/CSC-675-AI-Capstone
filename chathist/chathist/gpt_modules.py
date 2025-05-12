@@ -15,6 +15,7 @@ class EModule(nn.Module, ABC):
 
     def __init__(self) -> None:
         super().__init__()
+        torch.manual_seed(123)
         self._device = chathist.config.device
         self._gpt_flavor = chathist.config.gpt_flavor
         self._log = chathist.config.log
