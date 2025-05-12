@@ -487,7 +487,8 @@ class GPT2(EModule):
         gpt_hf = GPT2Model.from_pretrained(
             self._model,
             cache_dir=self._outdir,
-            # cache_dir=f"checkpoints_{model.split('/')[1]}",
+            use_safetensors= True,
+            from_tf = False
         )
         if not path_exists:
             self._log.info("Dowload complete.")

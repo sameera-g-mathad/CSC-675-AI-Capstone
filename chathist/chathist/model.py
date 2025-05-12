@@ -39,20 +39,21 @@ class Model:
         """Experiment"""
         return self._loss(logits.flatten(0, 1), targets.flatten().long())
 
+
     def evaluate(self, _loader: torch.utils.data.DataLoader):
         """Experimental"""
         self._model.eval()
         total_loss = 0.0
         # Since index starts from 0 below
-        batches = 1
+        batches = 0
         with torch.inference_mode():
             for i, (inputs, targets) in enumerate(_loader):
-                inputs.to(self._device)
-                targets.to(self._device)
+                inputs = inputs.to(self._device)
+                targets = targets.to(self._device)
                 logits = self._model(inputs)
                 loss: torch.Tensor = self.calc_loss(logits, targets)
-                total_loss += loss
-                batches += i
+                total_loss += loss.item()
+                batches += 1
             return total_loss / batches
 
     def train(
@@ -72,23 +73,24 @@ class Model:
             self._model.train()
             self._log.info("Epoch %s", epoch + 1)
             for i, (inputs, targets) in enumerate(train_loader):
-                self._log.info("Batch %s", i + 1)
-                inputs.to(self._device)
-                targets.to(self._device)
+                # self._log.info("Batch %s", i + 1)
+                inputs = inputs.to(self._device)
+                targets = targets.to(self._device)
 
                 self._optimizer.zero_grad()
 
                 logits: torch.Tensor = self._model.forward(inputs)
 
                 loss: torch.Tensor = self.calc_loss(logits=logits, targets=targets)
-
+                if (i + 1) % 10 == 0:
+                    self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
                 loss.backward()
                 self._optimizer.step()
 
-                if i % eval_freq == 0:
-                    train_loss.append(self.evaluate(train_loader))
-                    if val_loader is not None and val_loss is not None:
-                        val_loss.append(self.evaluate(val_loader))
+                # if i % eval_freq == 0:
+                #     train_loss.append(self.evaluate(train_loader))
+                #     if val_loader is not None and val_loss is not None:
+                #         val_loss.append(self.evaluate(val_loader))
         return train_loss, val_loss
 
     def generate(self, prompt: str) -> str:

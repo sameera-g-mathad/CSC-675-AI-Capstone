@@ -173,6 +173,24 @@ class Config:
                 self._cfg["train"], "learning_rate", raise_error=True
             ):
                 self._learning_rate = self._cfg["train"]["learning_rate"]
+        
+        if self._compare_dict(self._cfg, "data"):
+            if self._compare_dict(self._cfg["data"], "batch_size", raise_error=True):
+                self._batch_size = self._cfg["data"]["batch_size"]
+
+            if self._compare_dict(
+                self._cfg["data"], "shuffle", raise_error=True
+            ):
+                self._shuffle = self._cfg["data"]["shuffle"]
+
+            if self._compare_dict(self._cfg["data"], "drop_last", raise_error=True):
+                self._drop_last = self._cfg["data"]["drop_last"]
+
+            if self._compare_dict(
+                self._cfg["data"], "mask_input", raise_error=True
+            ):
+                self._mask_input = self._cfg["data"]["mask_input"]
+
 
     @property
     def log(self):

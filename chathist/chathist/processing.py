@@ -89,11 +89,7 @@ class InstructionDataLoader:
 
     def load(
         self,
-        dataset: Dataset,
-        batch_size: int,
-        drop_last: bool,
-        shuffle: bool,
-        mask_input: bool,
+        dataset: Dataset
     ):
         """
         Experimental
