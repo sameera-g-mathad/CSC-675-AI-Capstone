@@ -2,6 +2,7 @@ from functools import partial
 import torch
 from torch.utils.data import DataLoader, Dataset
 import chathist
+import chathist.conf
 
 
 class InstructionDataset(Dataset):
@@ -31,6 +32,10 @@ class InstructionDataLoader:
         self._ignore_index = chathist.config.ignore_index
         self._endoftext = chathist.config.endoftext
         self._response_ids = chathist.config.response_ids
+        self._batch_size = chathist.config.batch_size
+        self._drop_last = chathist.config.drop_last
+        self._shuffle = chathist.config.shuffle
+        self._mask_input = chathist.config.mask_input
 
     def _custom_collate(self, batch, mask_input: bool = False):
         """
@@ -93,12 +98,12 @@ class InstructionDataLoader:
         """
         Experimental
         """
-        _collate_fn = partial(self._custom_collate, mask_input=mask_input)
+        _collate_fn = partial(self._custom_collate, mask_input=self._mask_input)
         return DataLoader(
             dataset=dataset,
-            batch_size=batch_size,
-            drop_last=drop_last,
-            shuffle=shuffle,
+            batch_size=self._batch_size,
+            drop_last=self._drop_last,
+            shuffle=self._shuffle,
             collate_fn=_collate_fn,
         )
 

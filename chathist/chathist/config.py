@@ -40,6 +40,12 @@ class Config:
     _epochs: int = 3
     _learning_rate: float = 0.01
 
+    #
+    _batch_size: int = 16
+    _shuffle: bool = False
+    _drop_last: bool = True
+    _mask_input: bool = True
+
     # By default the repo is set as the intention of this
     # project is to build gpt2 model.
     _hugginface_user = "openai-community"
@@ -288,6 +294,26 @@ class Config:
     def epochs(self):
         """Experiment"""
         return self._epochs
+    
+    @property
+    def batch_size(self):
+        """Experiment"""
+        return self._batch_size
+    
+    @property
+    def drop_last(self):
+        """Experiment"""
+        return self._drop_last
+    
+    @property
+    def shuffle(self):
+        """Experiment"""
+        return self._shuffle
+    
+    @property
+    def mask_input(self):
+        """Experiment"""
+        return self._mask_input
 
     def _set_response_query(self, response_query: str) -> None:
         """

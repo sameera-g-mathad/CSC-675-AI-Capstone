@@ -13,7 +13,7 @@ description = "This is a gpt2 implementation from scratch after reading Buildllm
 
 authors =[{name = "Sameer Gururaj Mathad", email = "smathad@depaul.edu"}]
 
-requires-python = "==3.12.0"
+requires-python = ">=3.12.0"
 
 dynamic = ["dependencies", "optional-dependencies"]
 
