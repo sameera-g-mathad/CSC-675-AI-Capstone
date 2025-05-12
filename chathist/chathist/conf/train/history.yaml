@@ -3,11 +3,15 @@ config:
   endoftext: 50256
   gpt_flavor: 'gpt2'
   model_name: 'gpt2'
-  model_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models/pretrained'
+  model_path: '/home/smathad/ai_capstone/chathist/models/pretrained'
   save_as: 'gpt2_chat_title_finetuned'
-  save_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models/finetuned'
+  save_path: '/home/smathad/ai_capstone/chathist/models/finetuned'
 
 lora:
-  use_lora: True
+  use_lora: False
   alpha: 16
   rank: 16
+
+train:
+  learning_rate: 1e-6
+  epochs: 10

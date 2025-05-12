@@ -29,7 +29,7 @@ class Model:
         self._log = chathist.config.log
         self._model = GPT2()
         self._optimizer = torch.optim.AdamW(
-            self._model.parameters(), lr=self._learning_rate, weight_decay= 0.0001
+            self._model.parameters(), lr=self._learning_rate, weight_decay= 0.1
         )
         self._loss = torch.nn.CrossEntropyLoss()
 
@@ -51,7 +51,7 @@ class Model:
         total_loss = 0.0
         # Since index starts from 0 below
         batches = 0
-        with torch.inference_mode():
+        with torch.no_grad():
             for inputs, targets in _loader:
                 loss: torch.Tensor = self.calc_loss(inputs, targets)
                 total_loss += loss.item()
@@ -93,7 +93,8 @@ class Model:
     def generate(self, prompt: str) -> str:
         """Experimental"""
         token_ids = self._tokenizer.encode_text(prompt)
-        token_ids = torch.unsqueeze(token_ids, dim=0)
+        token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
+        
         self._model.eval()
         for _ in range(30):
             with torch.inference_mode():
