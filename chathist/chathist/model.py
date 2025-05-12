@@ -28,12 +28,15 @@ class Model:
         self._epochs = chathist.config.epochs
         self._log = chathist.config.log
         self._model = GPT2()
+        self._model.load_weights()
+
+
         self._optimizer = torch.optim.AdamW(
             self._model.parameters(), lr=self._learning_rate, weight_decay= 0.1
         )
         self._loss = torch.nn.CrossEntropyLoss()
 
-        self._model.load_weights()
+        
 
     def calc_loss(self, inputs: torch.Tensor, targets: torch.Tensor):
         """Experiment"""
@@ -73,7 +76,9 @@ class Model:
 
         for epoch in range(self._epochs):
             self._model.train()
-            self._log.info("Epoch %s", epoch + 1)
+            # self._log.info("Epoch %s", epoch + 1)
+            total_loss = 0
+            batches = 0
             for i, (inputs, targets) in enumerate(train_loader):
                 # self._log.info("Batch %s", i + 1)
 
@@ -81,12 +86,15 @@ class Model:
 
                 loss: torch.Tensor = self.calc_loss(inputs=inputs, targets=targets)
 
+                total_loss += loss.item()
+                batches += 1
                 loss.backward()
 
                 self._optimizer.step()
 
-                if (i + 1) % 10 == 0:
-                    self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
+                # if (i + 1) % 10 == 0:
+                #     self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
+            self._log.info("Epoch: %s, Loss: %s", epoch, total_loss / batches)
 
         return train_loss, val_loss
 
