@@ -4,6 +4,7 @@ import torch
 import pandas as pd
 import chathist
 from chathist import GPT2
+from .instruction_styling import Instruction
 
 
 class Model:
@@ -12,7 +13,7 @@ class Model:
     """
 
     _device: str
-    _endoftext:int
+    _endoftext: int
     _epochs: int = 2
     _learning_rate: float
     _log: logging.Logger
@@ -21,26 +22,24 @@ class Model:
     _optimizer: torch.optim.Optimizer
     _tokenizer: chathist.tokenizer.Tokenizer
 
-    def __init__(
-        self,
-    ):
+    def __init__(self, style: Instruction):
         self._tokenizer = chathist.config.tokenizer
         self._device = chathist.config.device
         self._learning_rate = chathist.config.lr
         self._endoftext = chathist.config.endoftext
         self._epochs = chathist.config.epochs
         self._log = chathist.config.log
+
+        self._style = style
         self._model = GPT2()
         self._model.load_weights()
-        self._model.to(self._device)
-
 
         self._optimizer = torch.optim.AdamW(
-            self._model.parameters(), lr=self._learning_rate, weight_decay= 0.1
+            self._model.parameters(), lr=self._learning_rate, weight_decay=0.1
         )
-        self._loss = torch.nn.CrossEntropyLoss()
 
-        
+        self._model.to(self._device)
+        self._loss = torch.nn.CrossEntropyLoss()
 
     def calc_loss(self, inputs: torch.Tensor, targets: torch.Tensor):
         """Experiment"""
@@ -50,7 +49,6 @@ class Model:
 
         # pylint: disable=no-member
         return self._loss(logits.flatten(0, 1), targets.flatten().long())
-
 
     def evaluate(self, _loader: torch.utils.data.DataLoader):
         """Experimental"""
@@ -65,9 +63,15 @@ class Model:
                 batches += 1
         self._model.train()
         return total_loss / batches
-    
+
     def generate(self, prompt: str) -> str:
         """Experimental"""
+        if not self._style.is_format(prompt):
+            self._log.info(
+                "Formatting prompt into %s style", chathist.config.style_name
+            )
+            prompt = self._style.format(prompt)
+
         token_ids = self._tokenizer.encode_text(prompt)
         token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
         self._model.eval()
@@ -77,15 +81,13 @@ class Model:
                 logits = self._model(token_ids)  # (1, token_len, emb_dim)
                 last_token = logits[:, -1, :]  # Get the last embedding
                 # Making sure that all the logits are between 0 and 1.
-                last_token = torch.softmax(
-                    last_token, dim=-1
-                )
+                last_token = torch.softmax(last_token, dim=-1)
 
                 token = torch.argmax(last_token, dim=-1, keepdim=True)
-                
+
                 if token == self._endoftext:
                     break
-                
+
                 response.append(token.item())
                 token_ids = torch.cat((token_ids, token), dim=-1)
 
@@ -120,19 +122,18 @@ class Model:
 
                 self._optimizer.step()
 
-
                 # if (i + 1) % 10 == 0:
                 #     self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
             self._log.info("Epoch: %s, Loss: %s", epoch, total_loss / batches)
 
         return train_loss, val_loss
 
-    def trainable_params(self, verbose: bool = True)->Optional[pd.DataFrame]:
+    def trainable_params(self, verbose: bool = True) -> Optional[pd.DataFrame]:
         """
         Experimental
         """
-        param_info:dict =  self._model.get_model_params(verbose)
-        self._log.info('Total model parameters: %s', param_info['total_params'])
-        self._log.info('Total trainable parameters: %s', param_info['total_trainable'])
+        param_info: dict = self._model.get_model_params(verbose)
+        self._log.info("Total model parameters: %s", param_info["total_params"])
+        self._log.info("Total trainable parameters: %s", param_info["total_trainable"])
         if verbose:
-            return param_info['df']
+            return param_info["df"]

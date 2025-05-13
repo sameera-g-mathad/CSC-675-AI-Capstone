@@ -19,7 +19,6 @@ class Config:
 
     _log: logging.Logger
     _tokenizer: Tokenizer | None = None
-    _response_query: str
     _ignore_index: int = -100
     _endoftext: int = 50256
     _dtype = torch.int32
@@ -46,7 +45,15 @@ class Config:
     _drop_last: bool = True
     _mask_input: bool = True
 
-    # Style settings  
+    # Style settings
+    _style_name: str = "alpaca"
+    _input_query: str = ""
+    _response_query: str = ""
+    _prompt: str = ""
+    _input_col: str = ""
+    _response_col: str = ""
+    _output_col: str = ""
+    _new_df: bool = True
 
     # By default the repo is set as the intention of this
     # project is to build gpt2 model.
@@ -175,24 +182,46 @@ class Config:
                 self._cfg["train"], "learning_rate", raise_error=True
             ):
                 self._learning_rate = self._cfg["train"]["learning_rate"]
-        
+
         if self._compare_dict(self._cfg, "data"):
             if self._compare_dict(self._cfg["data"], "batch_size", raise_error=True):
                 self._batch_size = self._cfg["data"]["batch_size"]
 
-            if self._compare_dict(
-                self._cfg["data"], "shuffle", raise_error=True
-            ):
+            if self._compare_dict(self._cfg["data"], "shuffle", raise_error=True):
                 self._shuffle = self._cfg["data"]["shuffle"]
 
             if self._compare_dict(self._cfg["data"], "drop_last", raise_error=True):
                 self._drop_last = self._cfg["data"]["drop_last"]
 
-            if self._compare_dict(
-                self._cfg["data"], "mask_input", raise_error=True
-            ):
+            if self._compare_dict(self._cfg["data"], "mask_input", raise_error=True):
                 self._mask_input = self._cfg["data"]["mask_input"]
 
+        if self._compare_dict(self._cfg, "style"):
+            if self._compare_dict(self._cfg["style"], "style_name", raise_error=True):
+                self._style_name = self._cfg["style"]["style_name"]
+
+            if self._compare_dict(self._cfg["style"], "prompt", raise_error=True):
+                self._prompt = self._cfg["style"]["prompt"]
+
+            if self._compare_dict(self._cfg["style"], "input_query", raise_error=True):
+                self._input_query = self._cfg["style"]["input_query"]
+
+            if self._compare_dict(
+                self._cfg["style"], "response_query", raise_error=True
+            ):
+                self._response_query = self._cfg["style"]["response_query"]
+
+            if self._compare_dict(self._cfg["style"], "input_col", raise_error=True):
+                self._input_col = self._cfg["style"]["input_col"]
+
+            if self._compare_dict(self._cfg["style"], "response_col", raise_error=True):
+                self._response_col = self._cfg["style"]["response_col"]
+
+            if self._compare_dict(self._cfg["style"], "output_col", raise_error=True):
+                self._output_col = self._cfg["style"]["output_col"]
+
+            if self._compare_dict(self._cfg["style"], "new_df", raise_error=True):
+                self._new_df = self._cfg["style"]["new_df"]
 
     @property
     def log(self):
@@ -243,19 +272,6 @@ class Config:
         Experimental
         """
         return f"{self._model_path}/{self._model_name}"
-    
-    outdir.setter
-    def _(self, x):
-        return x
-
-    @property
-    def response_query(self) -> str:
-        """
-        Returns the stored response query back.
-        """
-        if self._response_query is None:
-            raise ValueError("Response query is not set.")
-        return self._response_query
 
     @property
     def response_ids(self) -> torch.Tensor:
@@ -318,48 +334,66 @@ class Config:
     def epochs(self):
         """Experiment"""
         return self._epochs
-    
+
     @property
     def batch_size(self):
         """Experiment"""
         return self._batch_size
-    
+
     @property
     def drop_last(self):
         """Experiment"""
         return self._drop_last
-    
+
     @property
     def shuffle(self):
         """Experiment"""
         return self._shuffle
-    
+
     @property
     def mask_input(self):
         """Experiment"""
         return self._mask_input
 
-    def _set_response_query(self, response_query: str) -> None:
-        """
-        This method sets the response query that is inputted
-        in InstructionStyle while creating propmt styles.
-        This is done so that it can be used everywhere, including
-        in dataloaders whether to mask all the input and instructions
-        including response query, so that the model only predicts the
-        response and not the input again.
+    @property
+    def style_name(self):
+        """Experiment"""
+        return self._style_name
 
-        :param str response_query: Response query that is inputed into
-        Instruction Style.
+    @property
+    def prompt(self):
+        """Experiment"""
+        return self._prompt
 
-        :rtype: None
+    @property
+    def input_query(self):
+        """Experiment"""
+        return self._input_query
 
-        :examples:
+    @property
+    def response_query(self):
+        """Experiment"""
+        return self._response_query
 
-        `Alpaca`: "### Response"
+    @property
+    def input_col(self):
+        """Experiment"""
+        return self._input_col
 
-        `Phi3`: "<|assistant|>"
-        """
-        self._response_query = response_query
+    @property
+    def response_col(self):
+        """Experiment"""
+        return self._response_col
+
+    @property
+    def output_col(self):
+        """Experiment"""
+        return self._output_col
+
+    @property
+    def new_df(self):
+        """Experiment"""
+        return self._new_df
 
     def set_dtype(self, dtype: torch.dtype):
         """
@@ -371,6 +405,28 @@ class Config:
         :param torch.dtype dtype: Dtype to set tensors with.
         """
         self._dtype = dtype
+
+    # def _set_response_query(self, response_query: str) -> None:
+    #     """
+    #     This method sets the response query that is inputted
+    #     in InstructionStyle while creating propmt styles.
+    #     This is done so that it can be used everywhere, including
+    #     in dataloaders whether to mask all the input and instructions
+    #     including response query, so that the model only predicts the
+    #     response and not the input again.
+
+    #     :param str response_query: Response query that is inputed into
+    #     Instruction Style.
+
+    #     :rtype: None
+
+    #     :examples:
+
+    #     `Alpaca`: "### Response"
+
+    #     `Phi3`: "<|assistant|>"
+    #     """
+    #     self._response_query = response_query
 
     # def set_gpt_flavor(self, flavor: str = "gpt2-xl") -> None:
     #     """

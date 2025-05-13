@@ -8,25 +8,27 @@ class Instruction(ABC):
     Class for creating instruction styles either alpaca or phi3.
     """
 
-    def __init__(self, prompt: str, input_query: str, response_query: str):
+    def __init__(self):
         """
         This is the superclass for Alpaca and Phi3 classes that are two
         popular styles for creating prompt styles for finetuning a LLM.
 
-        :param str prompt: The prompt that is mainly used in Alpaca finetuning.
-        No need of passing this argument while opting `Phi3` style. Although empty
-        '' can be passed as well.
-        :param str input_query: The input query that needs to instruct LLM what the input
-        is.
-        :param str response_query: The response query hat needs to instruct LLM what
-        the response is.
         """
-        self.prompt = prompt
-        self.input_query = input_query
-        self.response_query = response_query
+        self._prompt = chathist.config.prompt
+        self._input_query = chathist.config.input_query
+        self._response_query = chathist.config.response_query
+        self._input_col = chathist.config.input_col
+        self._response_col = chathist.config.response_col
+        self._output_col = chathist.config.output_col
+        self._new_df = chathist.config.new_df
 
-        # this is used in dataloader to mask inputs if user chooses to do so.
-        chathist.config._set_response_query(response_query=response_query)
+    def is_format(self, _input: str) -> bool:
+        """Experimental"""
+        return (
+            self._prompt in _input
+            and self._input_query in _input
+            and self._response_query in _input
+        )
 
     @abstractmethod
     def format(self, _input: str) -> str:
@@ -63,8 +65,6 @@ class Instruction(ABC):
         self,
         df: pd.DataFrame,
         combined_series: pd.Series,
-        output_col: str,
-        new_df: bool,
     ) -> pd.DataFrame:
         """
         Method to return new dataframe or modify existing dataframe.
@@ -81,19 +81,15 @@ class Instruction(ABC):
         :rtype: pd.DataFrame.
         :returns: A modified or new dataframe.
         """
-        if not new_df:
-            df[output_col] = combined_series
+        if not self._new_df:
+            df[self._output_col] = combined_series
             return df
 
-        return pd.DataFrame({output_col: combined_series})
+        return pd.DataFrame({self._output_col: combined_series})
 
     def convert_train(
         self,
         df: pd.DataFrame,
-        input_col: str,
-        response_col: str,
-        output_col: str,
-        new_df: bool = True,
     ):
         """
         This method is used to take input and response columns and return
@@ -113,16 +109,13 @@ class Instruction(ABC):
         :returns: A modified or new dataframe.
         """
         combined_series = df.apply(
-            lambda row: self.format(row[input_col]) + row[response_col], axis=1
+            lambda row: self.format(row[self._input_col]) + row[self._response_col],
+            axis=1,
         )
 
-        return self._return_df(
-            df=df, combined_series=combined_series, output_col=output_col, new_df=new_df
-        )
+        return self._return_df(df=df, combined_series=combined_series)
 
-    def convert_test(
-        self, df: pd.DataFrame, input_col: str, output_col: str, new_df: bool = True
-    ):
+    def convert_test(self, df: pd.DataFrame):
         """
         This method is used to take input column and return
         a new or existing dataframe with the instruction column added
@@ -141,11 +134,11 @@ class Instruction(ABC):
         :rtype: pd.DataFrame.
         :returns: A modified or new dataframe.
         """
-        combined_series = df.apply(lambda row: self.format(row[input_col]), axis=1)
-
-        return self._return_df(
-            df=df, combined_series=combined_series, output_col=output_col, new_df=new_df
+        combined_series = df.apply(
+            lambda row: self.format(row[self._input_col]), axis=1
         )
+
+        return self._return_df(df=df, combined_series=combined_series)
 
 
 class Alpaca(Instruction):
@@ -155,7 +148,9 @@ class Alpaca(Instruction):
     """
 
     def format(self, _input: str):
-        return f"{self.prompt}" f"{self.input_query}{_input}" f"{self.response_query}"
+        return (
+            f"{self._prompt}" f"{self._input_query}{_input}" f"{self._response_query}"
+        )
 
 
 class Phi3(Instruction):
@@ -165,7 +160,7 @@ class Phi3(Instruction):
     """
 
     def format(self, _input: str):
-        return f"{self.input_query}{_input}{self.response_query}"
+        return f"{self._input_query}{_input}{self._response_query}"
 
 
 class InstructionStyle:
@@ -174,12 +169,7 @@ class InstructionStyle:
     """
 
     @staticmethod
-    def load(
-        style: str = "alpaca",
-        prompt: str = "",
-        input_query: str = "",
-        response_query: str = "",
-    ) -> Instruction:
+    def load() -> Instruction:
         """
         Factory Method for creating an instance of Instruction object that can be use
         to create either ***alpaca*** or ***phi3*** styled prompts.
@@ -196,26 +186,15 @@ class InstructionStyle:
         :returns: An Instruction object which is an instance of either `Alpaca` subclass
         or `Phi3` subclass.
         """
+        style = chathist.config.style_name
         chathist.config.log.info("%s style chosen!!", style)
         match (style):
             case "alpaca":
-                return Alpaca(
-                    prompt=prompt,
-                    input_query=input_query,
-                    response_query=response_query,
-                )
+                return Alpaca()
             case "phi3":
-                return Phi3(
-                    prompt="",
-                    input_query=input_query,
-                    response_query=response_query,
-                )
+                return Phi3()
 
         chathist.config.log.warning(
             "No style chosen!!! Returning default style: Alpaca"
         )
-        return Alpaca(
-            prompt=prompt,
-            input_query=input_query,
-            response_query=response_query,
-        )
+        return Alpaca()

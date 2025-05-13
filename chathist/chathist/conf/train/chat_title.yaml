@@ -8,10 +8,27 @@ config:
   save_path: '/home/smathad/ai_capstone/chathist/models/finetuned'
 
 lora:
-  use_lora: True
+  use_lora: False
   alpha: 16
   rank: 16
 
 train:
   learning_rate: 1e-5
   epochs: 3
+  weight_decay: 0.1
+
+data:
+  batch_size: 16
+  shuffle: True
+  drop_last: True
+  mask_input: True
+
+style:
+  style_name: 'phi3'
+  prompt: ''
+  input_query: "<|user|>\n"
+  response_query: "\n<|llm|>\n"
+  input_col: 'message'
+  response_col: 'title'
+  output_col: 'instruct'
+  new_df: True
