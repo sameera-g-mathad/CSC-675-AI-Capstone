@@ -30,6 +30,7 @@ class Model:
         self._log = chathist.config.log
         self._model = GPT2()
         self._model.load_weights()
+        self._model.to(self._device)
 
 
         self._optimizer = torch.optim.AdamW(
@@ -71,7 +72,6 @@ class Model:
         """
         Experimental
         """
-        self._model.to(self._device)
         train_loss: list = []
         val_loss: list | None = None if val_loader is None else []
 
