@@ -241,6 +241,10 @@ class Config:
         Experimental
         """
         return f"{self._model_path}/{self._model_name}"
+    
+    outdir.setter
+    def _(self, x):
+        return x
 
     @property
     def response_query(self) -> str:

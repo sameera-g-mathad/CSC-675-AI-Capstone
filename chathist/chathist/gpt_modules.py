@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 from transformers.models.gpt2 import GPT2Model
@@ -20,16 +21,21 @@ class EModule(nn.Module, ABC):
         self._gpt_flavor = chathist.config.gpt_flavor
         self._log = chathist.config.log
         self._model = chathist.config.huggingface_repo
+        # chathist.config.outdir = "/Users/amestry/Downloads/GPT2"
         self._outdir = chathist.config.outdir
         self._use_lora = chathist.config.use_lora
 
         self._layers = self._gpt_flavor["n_layers"]
 
+
     def assign_nn_parameter(self, weights: torch.Tensor) -> torch.nn.Parameter:
         """
         Experimental
         """
-        return nn.Parameter(weights.clone().detach())
+        weights = nn.Parameter(weights.clone().detach())
+        if self._use_lora:
+            weights.requires_grad = False
+        return weights
 
     # def convert_type(self, weights: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
     #     """Experimental"""
@@ -42,6 +48,7 @@ class EModule(nn.Module, ABC):
         """
         raise NotImplementedError("Should be implemented by the subclasses.")
 
+        
 
 class LayerNorm(EModule):
     """
@@ -155,9 +162,9 @@ class LinearLoRA(nn.Module):
 
         self.linear_layer = linear_layer
 
-        self.linear_layer.weight.requires_grad = False
-        if self.linear_layer.bias is not None:
-            self.linear_layer.bias.requires_grad = False
+        # self.linear_layer.weight.requires_grad = False
+        # if self.linear_layer.bias is not None:
+        #     self.linear_layer.bias.requires_grad = False
 
         in_features, out_features = linear_layer.in_features, linear_layer.out_features
         self.lora = LoRA(in_features, out_features)
@@ -453,13 +460,31 @@ class GPT2(EModule):
         x = self.final_layer(x)
         return x
 
-    def get_model_params(self):
+    def get_model_params(self, verbose:bool = True)-> dict:
         """Experimental"""
-        total = 0
-        for layer in self.parameters():
-            total += layer.numel()
-
-        return total
+        total_params= 0
+        total_trainable = 0
+        records = []
+        for name, layer in self.named_parameters():
+            if verbose:
+                records.append({
+                    'layer_name': name,
+                    'requires_grad': layer.requires_grad,
+                    'params': layer.numel()
+                })
+            layer_params = layer.numel()
+            if layer.requires_grad:
+                total_trainable += layer_params
+            total_params += layer_params
+        param_info: dict = {
+            "total_params": total_params,
+            "total_trainable": total_trainable,
+        }
+        if verbose:
+            param_info['df'] = pd.DataFrame(records)
+        
+        return param_info
+        
 
     # def assign_check(self, left, right):
     #     """

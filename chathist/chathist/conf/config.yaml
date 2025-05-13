@@ -1,3 +1,3 @@
 defaults:
   - _self_ # (Suppresses) UserWarning: In 'config': Defaults list is missing `_self_`.
-  - train: history
+  - train: chat_title

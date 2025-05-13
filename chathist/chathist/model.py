@@ -1,6 +1,7 @@
 from typing import Optional
 import logging
 import torch
+import pandas as pd
 import chathist
 from chathist import GPT2
 
@@ -76,7 +77,7 @@ class Model:
 
         for epoch in range(self._epochs):
             self._model.train()
-            # self._log.info("Epoch %s", epoch + 1)
+            self._log.info("Epoch %s", epoch + 1)
             total_loss = 0
             batches = 0
             for i, (inputs, targets) in enumerate(train_loader):
@@ -92,6 +93,7 @@ class Model:
 
                 self._optimizer.step()
 
+
                 # if (i + 1) % 10 == 0:
                 #     self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
             self._log.info("Epoch: %s, Loss: %s", epoch, total_loss / batches)
@@ -102,7 +104,6 @@ class Model:
         """Experimental"""
         token_ids = self._tokenizer.encode_text(prompt)
         token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
-        
         self._model.eval()
         for _ in range(30):
             with torch.inference_mode():
@@ -116,3 +117,13 @@ class Model:
                 token_ids = torch.cat((token_ids, token), dim=-1)
 
         return self._tokenizer.decode_ids(token_ids.squeeze(dim=0))
+
+    def trainable_params(self, verbose: bool = True)->Optional[pd.DataFrame]:
+        """
+        Experimental
+        """
+        param_info:dict =  self._model.get_model_params(verbose)
+        self._log.info('Total model parameters: %s', param_info['total_params'])
+        self._log.info('Total trainable parameters: %s', param_info['total_trainable'])
+        if verbose:
+            return param_info['df']

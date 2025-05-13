@@ -13,5 +13,5 @@ lora:
   rank: 16
 
 train:
-  learning_rate: 1e-7
-  epochs: 2
+  learning_rate: 1e-5
+  epochs: 3
