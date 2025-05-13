@@ -529,6 +529,9 @@ class GPT2(EModule):
         gpt_hf.eval()
         self._log.info("Loading weights into model.")
         gpt_pretrained_weights = gpt_hf.state_dict()
+
+        if self._use_lora:
+            self._log.warning("Using loRA will freeze the whole model except for loRA weights.")
         self.pos_emb.weight = self.assign_nn_parameter(
             gpt_pretrained_weights["wpe.weight"]
         )

@@ -12,6 +12,7 @@ class Model:
     """
 
     _device: str
+    _endoftext:int
     _epochs: int = 2
     _learning_rate: float
     _log: logging.Logger
@@ -26,6 +27,7 @@ class Model:
         self._tokenizer = chathist.config.tokenizer
         self._device = chathist.config.device
         self._learning_rate = chathist.config.lr
+        self._endoftext = chathist.config.endoftext
         self._epochs = chathist.config.epochs
         self._log = chathist.config.log
         self._model = GPT2()
@@ -63,6 +65,31 @@ class Model:
                 batches += 1
         self._model.train()
         return total_loss / batches
+    
+    def generate(self, prompt: str) -> str:
+        """Experimental"""
+        token_ids = self._tokenizer.encode_text(prompt)
+        token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
+        self._model.eval()
+        response = []
+        for _ in range(30):
+            with torch.inference_mode():
+                logits = self._model(token_ids)  # (1, token_len, emb_dim)
+                last_token = logits[:, -1, :]  # Get the last embedding
+                # Making sure that all the logits are between 0 and 1.
+                last_token = torch.softmax(
+                    last_token, dim=-1
+                )
+
+                token = torch.argmax(last_token, dim=-1, keepdim=True)
+                
+                if token == self._endoftext:
+                    break
+                
+                response.append(token.item())
+                token_ids = torch.cat((token_ids, token), dim=-1)
+
+        return self._tokenizer.decode_ids(torch.tensor(response))
 
     def train(
         self,
@@ -99,24 +126,6 @@ class Model:
             self._log.info("Epoch: %s, Loss: %s", epoch, total_loss / batches)
 
         return train_loss, val_loss
-
-    def generate(self, prompt: str) -> str:
-        """Experimental"""
-        token_ids = self._tokenizer.encode_text(prompt)
-        token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
-        self._model.eval()
-        for _ in range(30):
-            with torch.inference_mode():
-                logits = self._model(token_ids)  # (1, token_len, emb_dim)
-                last_token = logits[:, -1, :]  # Get the last embedding
-                last_token = torch.softmax(
-                    last_token, dim=-1
-                )  # Making sure that all the logits are between 0 and 1.
-                token = torch.argmax(last_token, dim=-1, keepdim=True)
-                # print(token.shape, token_ids.shape)
-                token_ids = torch.cat((token_ids, token), dim=-1)
-
-        return self._tokenizer.decode_ids(token_ids.squeeze(dim=0))
 
     def trainable_params(self, verbose: bool = True)->Optional[pd.DataFrame]:
         """

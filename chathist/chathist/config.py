@@ -25,26 +25,28 @@ class Config:
     _dtype = torch.int32
     _device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
-    #
+    # Config settings
     _model_name: str
     _model_path: str
     _save_as: str
     _save_path: str
 
-    #
+    # Lora settings
     _use_lora: bool
     _lora_rank: int
     _lora_alpha: float
 
-    #
+    # Training settings
     _epochs: int = 3
     _learning_rate: float = 0.01
 
-    #
+    # DataLoader settings
     _batch_size: int = 16
     _shuffle: bool = False
     _drop_last: bool = True
     _mask_input: bool = True
+
+    # Style settings  
 
     # By default the repo is set as the intention of this
     # project is to build gpt2 model.
