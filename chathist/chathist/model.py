@@ -1,6 +1,7 @@
 from typing import Optional
 import os
 import logging
+from tqdm import tqdm
 import torch
 import pandas as pd
 import chathist
@@ -37,6 +38,10 @@ class Model:
         self._model = GPT2()
 
         if os.path.exists(self._save_path):
+            self._log.info(
+                "Trained model exists on saved path %s\n",
+                self._save_path,
+            )
             self._train_model = False
 
             checkpoint = torch.load(self._save_path)
@@ -68,12 +73,13 @@ class Model:
         # Since index starts from 0 below
         batches = 0
         with torch.no_grad():
-            for inputs, targets in _loader:
+            for inputs, targets in tqdm(_loader, colour="blue"):
                 loss: torch.Tensor = self.calc_loss(inputs, targets)
                 total_loss += loss.item()
                 batches += 1
+
+        self._log.info("Validation Loss: %s", total_loss / batches)
         self._model.train()
-        return total_loss / batches
 
     def generate(self, prompt: str) -> str:
         """Experimental"""
@@ -121,7 +127,7 @@ class Model:
                 self._log.info("Epoch %s", epoch + 1)
                 total_loss = 0
                 batches = 0
-                for i, (inputs, targets) in enumerate(train_loader):
+                for inputs, targets in tqdm(train_loader, colour="green"):
                     # self._log.info("Batch %s", i + 1)
 
                     self._optimizer.zero_grad()
@@ -134,10 +140,9 @@ class Model:
 
                     self._optimizer.step()
 
-                    # if (i + 1) % 10 == 0:
-                    #     self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
-                self._log.info("Epoch: %s, Loss: %s", epoch, total_loss / batches)
-
+                self._log.info("Train Loss: %s", total_loss / batches)
+                if isinstance(val_loader, torch.utils.data.DataLoader):
+                    self.evaluate(val_loader)
             torch.save(self._model.state_dict(), self._save_path)
         else:
             self._log.warning(
