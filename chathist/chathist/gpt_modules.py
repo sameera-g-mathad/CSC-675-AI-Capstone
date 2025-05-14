@@ -27,7 +27,6 @@ class EModule(nn.Module, ABC):
 
         self._layers = self._gpt_flavor["n_layers"]
 
-
     def assign_nn_parameter(self, weights: torch.Tensor) -> torch.nn.Parameter:
         """
         Experimental
@@ -48,7 +47,6 @@ class EModule(nn.Module, ABC):
         """
         raise NotImplementedError("Should be implemented by the subclasses.")
 
-        
 
 class LayerNorm(EModule):
     """
@@ -151,7 +149,7 @@ class LoRA(nn.Module):
         return self.alpha * (x @ self.a_matrix @ self.b_matrix)
 
 
-class LinearLoRA(nn.Module):
+class LinearLoRA(EModule):
     """
     This layer replaces the regular linear layers in the model,
     that adds additional loRa weights.
@@ -178,6 +176,15 @@ class LinearLoRA(nn.Module):
         """
         return self.linear_layer(x) + self.lora(x)
 
+    def load_weights(self, weights: OrderedDict | None):
+        """
+        Experimental
+        """
+        if weights is None:
+            raise ValueError("Weights passed should be an instance of OrderedDict")
+        self.linear_layer.weight = self.assign_nn_parameter(weights["weights"])
+        self.linear_layer.bias = self.assign_nn_parameter(weights["bias"])
+
 
 class MLPGPT2(EModule):
     """
@@ -190,12 +197,24 @@ class MLPGPT2(EModule):
     def __init__(self, emb_dim: int) -> None:
         super().__init__()
         out_dim = emb_dim * 4
-        # self.layers = nn.Sequential(
-        #     nn.Linear(emb_dim, out_dim), GeLU(), nn.Linear(out_dim, emb_dim)
-        # )
+
         self.layer1 = nn.Linear(emb_dim, out_dim)
         self.gelu = GeLU()
         self.layer2 = nn.Linear(out_dim, emb_dim)
+
+        if self._use_lora:
+            self.use_lora()
+
+    def use_lora(self):
+        """
+        Experimental
+        """
+        if self._use_lora:
+            self._log.info("Using LoRA weights for ff layers!!")
+            if isinstance(self.layer1, nn.Linear):
+                self.layer1 = LinearLoRA(self.layer1)
+            if isinstance(self.layer2, nn.Linear):
+                self.layer2 = LinearLoRA(self.layer2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -213,17 +232,38 @@ class MLPGPT2(EModule):
         """
         if weights is None:
             raise ValueError("Weights passed should be an instance of OrderedDict")
-        self.layer1.weight = self.assign_nn_parameter((weights["c_fc_weights"]))
-        self.layer1.bias = self.assign_nn_parameter(weights["c_fc_bias"])
-        self.layer2.weight = self.assign_nn_parameter(weights["c_proj_weights"])
-        self.layer2.bias = self.assign_nn_parameter(weights["c_proj_bias"])
+        if (
+            self._use_lora
+            and isinstance(self.layer1, LinearLoRA)
+            and isinstance(self.layer2, LinearLoRA)
+        ):
+            self.layer1.load_weights(
+                OrderedDict(
+                    {"weights": weights["c_fc_weights"], "bias": weights["c_fc_bias"]}
+                )
+            )
 
-        if self._use_lora:
-            self._log.info("Using LoRA weights for ff layers!!")
-            if isinstance(self.layer1, nn.Linear):
-                self.layer1 = LinearLoRA(self.layer1)
-            if isinstance(self.layer2, nn.Linear):
-                self.layer2 = LinearLoRA(self.layer2)
+            self.layer2.load_weights(
+                OrderedDict(
+                    {
+                        "weights": weights["c_proj_weights"],
+                        "bias": weights["c_proj_bias"],
+                    }
+                )
+            )
+        elif isinstance(self.layer1, nn.Linear) and isinstance(self.layer2, nn.Linear):
+            self.layer1.load_state_dict(
+                {
+                    "weight": self.assign_nn_parameter(weights["c_fc_weights"]),
+                    "bias": self.assign_nn_parameter(weights["c_fc_bias"]),
+                }
+            )
+            self.layer2.load_state_dict(
+                {
+                    "weight": self.assign_nn_parameter(weights["c_proj_weights"]),
+                    "bias": self.assign_nn_parameter(weights["c_proj_bias"]),
+                }
+            )
 
 
 class MultiHeadAttention(EModule):
@@ -268,6 +308,24 @@ class MultiHeadAttention(EModule):
             diagonal=1,
         )
 
+        if self._use_lora:
+            self.use_lora()
+
+    def use_lora(self):
+        """
+        Experimental
+        """
+        if self._use_lora:
+            self._log.info("Using LoRA weights for multi head layers!!")
+            if isinstance(self.wq, torch.nn.modules.linear.Linear):
+                self.wq = LinearLoRA(self.wq)
+            if isinstance(self.wk, nn.Linear):
+                self.wk = LinearLoRA(self.wk)
+            if isinstance(self.wv, nn.Linear):
+                self.wv = LinearLoRA(self.wv)
+            if isinstance(self.out_form, nn.Linear):
+                self.out_form = LinearLoRA(self.out_form)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Experimental"""
         batch_size, num_tokens, _ = x.shape
@@ -307,28 +365,54 @@ class MultiHeadAttention(EModule):
         conv1d_bias = weights["c_attn_bias"]
         c_proj_weight = weights["c_proj_weight"]
         c_proj_bias = weights["c_proj_bias"]
-        self.wq.weight = self.assign_nn_parameter(conv1d_weights[0].T)
-        self.wq.bias = self.assign_nn_parameter(conv1d_bias[0])
 
-        self.wk.weight = self.assign_nn_parameter(conv1d_weights[1].T)
-        self.wk.bias = self.assign_nn_parameter(conv1d_bias[1])
+        if (
+            self.use_lora
+            and isinstance(self.wq, LinearLoRA)
+            and isinstance(self.wv, LinearLoRA)
+            and isinstance(self.wk, LinearLoRA)
+            and isinstance(self.out_form, LinearLoRA)
+        ):
+            self.wq.load_weights(
+                OrderedDict({"weights": conv1d_weights[0].T, "bias": conv1d_bias[0]})
+            )
+            self.wk.load_weights(
+                OrderedDict({"weights": conv1d_weights[1].T, "bias": conv1d_bias[1]})
+            )
+            self.wv.load_weights(
+                OrderedDict({"weights": conv1d_weights[2].T, "bias": conv1d_bias[2]})
+            )
+            self.out_form.load_weights(
+                OrderedDict({"weights": c_proj_weight.T, "bias": c_proj_bias})
+            )
+        else:
+            self.wq.load_state_dict(
+                {
+                    "weight": self.assign_nn_parameter(conv1d_weights[0].T),
+                    "bias": self.assign_nn_parameter(conv1d_bias[0]),
+                }
+            )
 
-        self.wv.weight = self.assign_nn_parameter(conv1d_weights[2].T)
-        self.wv.bias = self.assign_nn_parameter(conv1d_bias[2])
+            self.wk.load_state_dict(
+                {
+                    "weight": self.assign_nn_parameter(conv1d_weights[1].T),
+                    "bias": self.assign_nn_parameter(conv1d_bias[1]),
+                }
+            )
 
-        self.out_form.weight = self.assign_nn_parameter(c_proj_weight.T)
-        self.out_form.bias = self.assign_nn_parameter(c_proj_bias)
+            self.wv.load_state_dict(
+                {
+                    "weight": self.assign_nn_parameter(conv1d_weights[2].T),
+                    "bias": self.assign_nn_parameter(conv1d_bias[2]),
+                }
+            )
 
-        if self._use_lora:
-            self._log.info("Using LoRA weights for multi head layers!!")
-            if isinstance(self.wq, torch.nn.modules.linear.Linear):
-                self.wq = LinearLoRA(self.wq)
-            if isinstance(self.wk, nn.Linear):
-                self.wk = LinearLoRA(self.wk)
-            if isinstance(self.wv, nn.Linear):
-                self.wv = LinearLoRA(self.wv)
-            if isinstance(self.out_form, nn.Linear):
-                self.out_form = LinearLoRA(self.out_form)
+            self.out_form.load_state_dict(
+                {
+                    "weight": self.assign_nn_parameter(c_proj_weight.T),
+                    "bias": self.assign_nn_parameter(c_proj_bias),
+                }
+            )
 
 
 class TransformerBlock(EModule):
@@ -446,6 +530,10 @@ class GPT2(EModule):
         self.final_layer = nn.Linear(
             self._gpt_flavor["emb_dim"], self._gpt_flavor["vocab_size"], bias=False
         )
+        if self._use_lora:
+            if isinstance(self.final_layer, nn.Linear):
+                self._log.info("Using Lora for final output layer!!")
+                self.final_layer = LinearLoRA(self.final_layer)
 
     def forward(self, batch_x):
         """Experimental"""
@@ -460,18 +548,20 @@ class GPT2(EModule):
         x = self.final_layer(x)
         return x
 
-    def get_model_params(self, verbose:bool = True)-> dict:
+    def get_model_params(self, verbose: bool = True) -> dict:
         """Experimental"""
-        total_params= 0
+        total_params = 0
         total_trainable = 0
         records = []
         for name, layer in self.named_parameters():
             if verbose:
-                records.append({
-                    'layer_name': name,
-                    'requires_grad': layer.requires_grad,
-                    'params': layer.numel()
-                })
+                records.append(
+                    {
+                        "layer_name": name,
+                        "requires_grad": layer.requires_grad,
+                        "params": layer.numel(),
+                    }
+                )
             layer_params = layer.numel()
             if layer.requires_grad:
                 total_trainable += layer_params
@@ -481,20 +571,9 @@ class GPT2(EModule):
             "total_trainable": total_trainable,
         }
         if verbose:
-            param_info['df'] = pd.DataFrame(records)
-        
-        return param_info
-        
+            param_info["df"] = pd.DataFrame(records)
 
-    # def assign_check(self, left, right):
-    #     """
-    #     Experimental
-    #     """
-    #     if left.shape != right.shape:
-    #         raise ValueError(
-    #             f"Shape mismatch. Left: {left.shape}, Right: {right.shape}"
-    #         )
-    #     return torch.nn.Parameter(right.clone().detach())
+        return param_info
 
     def download_model(self) -> GPT2Model:
         """
@@ -511,11 +590,9 @@ class GPT2(EModule):
                 "%s exists in %s. Skipping Download...", self._model, self._outdir
             )
         gpt_hf = GPT2Model.from_pretrained(
-            self._model,
-            cache_dir=self._outdir,
-            use_safetensors= True,
-            from_tf = False
+            self._model, cache_dir=self._outdir, use_safetensors=True, from_tf=False
         )
+
         if not path_exists:
             self._log.info("Dowload complete.")
 
@@ -531,7 +608,9 @@ class GPT2(EModule):
         gpt_pretrained_weights = gpt_hf.state_dict()
 
         if self._use_lora:
-            self._log.warning("Using loRA will freeze the whole model except for loRA weights.")
+            self._log.warning(
+                "Using loRA will freeze the whole model except for loRA weights."
+            )
         self.pos_emb.weight = self.assign_nn_parameter(
             gpt_pretrained_weights["wpe.weight"]
         )
@@ -547,14 +626,19 @@ class GPT2(EModule):
                 }
             )
         )
-        self.final_layer.weight = self.assign_nn_parameter(
-            gpt_pretrained_weights["wte.weight"]
-        )
 
-        if self._use_lora:
-            if isinstance(self.final_layer, nn.Linear):
-                self._log.info("Using Lora for final output layer!!")
-                self.final_layer = LinearLoRA(self.final_layer)
+        if self._use_lora and isinstance(self.final_layer, LinearLoRA):
+            self.final_layer.linear_layer.weight = self.assign_nn_parameter(
+                gpt_pretrained_weights["wte.weight"]
+            )
+        else:
+            self.final_layer.load_state_dict(
+                {
+                    "weight": self.assign_nn_parameter(
+                        gpt_pretrained_weights["wte.weight"]
+                    )
+                }
+            )
 
         for layer in range(self._layers):
             transfomer = self.transformers[layer]

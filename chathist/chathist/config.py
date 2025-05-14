@@ -274,6 +274,13 @@ class Config:
         return f"{self._model_path}/{self._model_name}"
 
     @property
+    def save_path(self) -> str:
+        """
+        Experimental
+        """
+        return f"{self._save_path}/{self._save_as}"
+
+    @property
     def response_ids(self) -> torch.Tensor:
         """
         Returns the ids of stored response query back.

@@ -1,4 +1,5 @@
 from typing import Optional
+import os
 import logging
 import torch
 import pandas as pd
@@ -20,6 +21,7 @@ class Model:
     _loss: torch.nn.CrossEntropyLoss
     _model: GPT2
     _optimizer: torch.optim.Optimizer
+    _train_model: bool = True
     _tokenizer: chathist.tokenizer.Tokenizer
 
     def __init__(self, style: Instruction):
@@ -29,17 +31,26 @@ class Model:
         self._endoftext = chathist.config.endoftext
         self._epochs = chathist.config.epochs
         self._log = chathist.config.log
+        self._save_path = chathist.config.save_path
 
         self._style = style
         self._model = GPT2()
-        self._model.load_weights()
 
-        self._optimizer = torch.optim.AdamW(
-            self._model.parameters(), lr=self._learning_rate, weight_decay=0.1
-        )
+        if os.path.exists(self._save_path):
+            self._train_model = False
+
+            checkpoint = torch.load(self._save_path)
+
+            self._model.load_state_dict(checkpoint)
+
+        else:
+            self._model.load_weights()
+            self._optimizer = torch.optim.AdamW(
+                self._model.parameters(), lr=self._learning_rate, weight_decay=0.1
+            )
+            self._loss = torch.nn.CrossEntropyLoss()
 
         self._model.to(self._device)
-        self._loss = torch.nn.CrossEntropyLoss()
 
     def calc_loss(self, inputs: torch.Tensor, targets: torch.Tensor):
         """Experiment"""
@@ -104,28 +115,35 @@ class Model:
         train_loss: list = []
         val_loss: list | None = None if val_loader is None else []
 
-        for epoch in range(self._epochs):
-            self._model.train()
-            self._log.info("Epoch %s", epoch + 1)
-            total_loss = 0
-            batches = 0
-            for i, (inputs, targets) in enumerate(train_loader):
-                # self._log.info("Batch %s", i + 1)
+        if self._train_model:
+            for epoch in range(self._epochs):
+                self._model.train()
+                self._log.info("Epoch %s", epoch + 1)
+                total_loss = 0
+                batches = 0
+                for i, (inputs, targets) in enumerate(train_loader):
+                    # self._log.info("Batch %s", i + 1)
 
-                self._optimizer.zero_grad()
+                    self._optimizer.zero_grad()
 
-                loss: torch.Tensor = self.calc_loss(inputs=inputs, targets=targets)
+                    loss: torch.Tensor = self.calc_loss(inputs=inputs, targets=targets)
 
-                total_loss += loss.item()
-                batches += 1
-                loss.backward()
+                    total_loss += loss.item()
+                    batches += 1
+                    loss.backward()
 
-                self._optimizer.step()
+                    self._optimizer.step()
 
-                # if (i + 1) % 10 == 0:
-                #     self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
-            self._log.info("Epoch: %s, Loss: %s", epoch, total_loss / batches)
+                    # if (i + 1) % 10 == 0:
+                    #     self._log.info("Batch: %s, Loss: %s", (i+1), loss.item())
+                self._log.info("Epoch: %s, Loss: %s", epoch, total_loss / batches)
 
+            torch.save(self._model.state_dict(), self._save_path)
+        else:
+            self._log.warning(
+                "Trained model exists on saved path %s\n Skipping Training",
+                self._save_path,
+            )
         return train_loss, val_loss
 
     def trainable_params(self, verbose: bool = True) -> Optional[pd.DataFrame]:

@@ -8,7 +8,7 @@ config:
   save_path: '/home/smathad/ai_capstone/chathist/models/finetuned'
 
 lora:
-  use_lora: False
+  use_lora: True
   alpha: 16
   rank: 16
 
