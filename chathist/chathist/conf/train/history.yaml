@@ -14,7 +14,7 @@ data:
   mask_input: True
 
 lora:
-  use_lora: False
+  use_lora: True
   alpha: 16
   rank: 16
 
