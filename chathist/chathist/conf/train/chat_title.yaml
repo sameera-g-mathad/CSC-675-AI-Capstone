@@ -1,26 +1,43 @@
 config:
   ignore_index: -100
   endoftext: 50256
+  # Model config of gpt2 you want to pre-load.
   gpt_flavor: 'gpt2-medium'
+  # Model you want to work with. I know gpt_flavor could have worked, but I have configured code to work this way.
   model_name: 'gpt2-medium'
-  model_path: '/home/smathad/ai_capstone/chathist/models/pretrained'
+
+  # To load the gpt2 model from if present or download from hugginface
+  model_path: '/home/smathad/ai_capstone/chathist/models/pretrained' # Your path.
+
+  # Name to save finetuned model.
   save_as: 'gpt2-medium_chat_title_finetuned'
-  save_path: '/home/smathad/ai_capstone/chathist/models/finetuned'
+
+  # Path to save finetuned model.
+  save_path: '/home/smathad/ai_capstone/chathist/models/finetuned' # Your path.
 
 data:
+  # DataLoader specific inputs.
   batch_size: 16
   shuffle: True
   drop_last: True
+
+  # If you want to mask inputs so that model will start predicting response directly.
   mask_input: True
 
 lora:
+  # This drives the model to use LoRA. If False, no additional parameters are added.
   use_lora: True
   alpha: 16
   rank: 16
 
+# Required style params. Check examples in notebooks for style related examples.
 style:
+  # Style can be either 'phi3' or 'alpaca'.
   style_name: 'phi3'
+
+  # Add prompt if you choose alpaca, else can remain empty. Check history.yaml for filled example.
   prompt: ''
+
   input_query: "<|user|>\n"
   response_query: "\n<|llm|>\n"
   input_col: 'message'
@@ -28,6 +45,7 @@ style:
   output_col: 'instruct'
   new_df: True
 
+# Training params.
 train:
   learning_rate: 1e-5
   epochs: 3
