@@ -1,10 +1,10 @@
 config:
   ignore_index: -100
   endoftext: 50256
-  gpt_flavor: 'gpt2'
-  model_name: 'gpt2'
+  gpt_flavor: 'gpt2-medium'
+  model_name: 'gpt2-medium'
   model_path: '/home/smathad/ai_capstone/chathist/models/pretrained'
-  save_as: 'gpt2_chat_title_finetuned'
+  save_as: 'gpt2-medium_chat_title_finetuned'
   save_path: '/home/smathad/ai_capstone/chathist/models/finetuned'
 
 data:
