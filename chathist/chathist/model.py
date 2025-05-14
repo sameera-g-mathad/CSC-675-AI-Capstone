@@ -5,7 +5,7 @@ import torch
 import pandas as pd
 import chathist
 from chathist import GPT2
-from .instruction_styling import Instruction
+from .instruction_styling import InstructionStyle
 
 
 class Model:
@@ -24,7 +24,7 @@ class Model:
     _train_model: bool = True
     _tokenizer: chathist.tokenizer.Tokenizer
 
-    def __init__(self, style: Instruction):
+    def __init__(self):
         self._tokenizer = chathist.config.tokenizer
         self._device = chathist.config.device
         self._learning_rate = chathist.config.lr
@@ -33,7 +33,7 @@ class Model:
         self._log = chathist.config.log
         self._save_path = chathist.config.save_path
 
-        self._style = style
+        self._style = InstructionStyle.load()
         self._model = GPT2()
 
         if os.path.exists(self._save_path):

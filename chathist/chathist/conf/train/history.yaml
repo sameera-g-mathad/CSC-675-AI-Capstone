@@ -4,14 +4,31 @@ config:
   gpt_flavor: 'gpt2'
   model_name: 'gpt2'
   model_path: '/home/smathad/ai_capstone/chathist/models/pretrained'
-  save_as: 'gpt2_chat_title_finetuned'
+  save_as: 'gpt2_indian_history_finetuned'
   save_path: '/home/smathad/ai_capstone/chathist/models/finetuned'
+
+data:
+  batch_size: 16
+  shuffle: True
+  drop_last: True
+  mask_input: True
 
 lora:
   use_lora: False
   alpha: 16
   rank: 16
 
+style:
+  style_name: 'alpaca'
+  prompt: '### You are an assistant with deep expertise in Indian history. You will answer any questions related to Indian history, providing accurate and insightful information.\n'
+  input_query: "## Input:\n"
+  response_query: "\n## Response:\n"
+  input_col: 'instruction'
+  response_col: 'response'
+  output_col: 'instruct'
+  new_df: True
+
 train:
-  learning_rate: 1e-6
-  epochs: 10
+  learning_rate: 1e-5
+  epochs: 3
+  weight_decay: 0.1

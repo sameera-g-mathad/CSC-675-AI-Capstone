@@ -7,21 +7,16 @@ config:
   save_as: 'gpt2_chat_title_finetuned'
   save_path: '/home/smathad/ai_capstone/chathist/models/finetuned'
 
-lora:
-  use_lora: True
-  alpha: 16
-  rank: 16
-
-train:
-  learning_rate: 1e-5
-  epochs: 3
-  weight_decay: 0.1
-
 data:
   batch_size: 16
   shuffle: True
   drop_last: True
   mask_input: True
+
+lora:
+  use_lora: True
+  alpha: 16
+  rank: 16
 
 style:
   style_name: 'phi3'
@@ -32,3 +27,8 @@ style:
   response_col: 'title'
   output_col: 'instruct'
   new_df: True
+
+train:
+  learning_rate: 1e-5
+  epochs: 3
+  weight_decay: 0.1
