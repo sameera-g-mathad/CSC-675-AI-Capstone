@@ -17,6 +17,7 @@ class Config:
     to name a few.
     """
 
+    # Default values.
     _log: logging.Logger
     _tokenizer: Tokenizer | None = None
     _ignore_index: int = -100
@@ -101,17 +102,24 @@ class Config:
         defaults: str = "train",
     ):
         """
-        Experimental
+        This method is used to initialize the config. This is where the logger is set,
+        and the config file is read. The config file is read using hydra and omegaconf.
         """
+
+        # The logger is set to the name of the class.
         self._log = logging.getLogger(__name__)
+
+        # The config file is read using hydra and omegaconf.
         with initialize(config_path=config_path, version_base=None):
             self._cfg = compose(config_name=config_name)
 
+        # Config of main and sub config files are merged.
         if defaults in self._cfg:
             OmegaConf.set_struct(self._cfg, False)
             self._cfg.update(self._cfg.pop(defaults))
             OmegaConf.set_struct(self._cfg, True)
 
+        # All the config values are set to the class variables.
         self._initialize()
 
     def _compare_dict(
@@ -134,20 +142,17 @@ class Config:
 
     def _initialize(self):
         """
-        Experimental
+        This method is to initialize the config values
+        from the config file. This is where the config
+        values are set to the class variables.
         """
+
         if self._compare_dict(self._cfg, "config"):
             if self._compare_dict(self._cfg["config"], "ignore_index"):
                 self._ignore_index = self._cfg["config"]["ignore_index"]
 
             if self._compare_dict(self._cfg["config"], "endoftext"):
                 self._endoftext = self._cfg["config"]["endoftext"]
-
-            # if self._compare_dict(self._cfg["config"], "dtype"):
-            #     self._dtype = self._cfg["config"]["dtype"]
-
-            # if self._compare_dict(self._cfg["config"], "device"):
-            #     self._device = self._cfg["config"]["device"]
 
             if self._compare_dict(self._cfg["config"], "gpt_flavor"):
                 self._gpt_flavor = self._cfg["config"]["gpt_flavor"]
@@ -226,7 +231,8 @@ class Config:
     @property
     def log(self):
         """
-        Experimental
+        Method to return the logger instance
+        that is used throughout the project.
         """
         return self._log
 
@@ -269,14 +275,14 @@ class Config:
     @property
     def outdir(self) -> str:
         """
-        Experimental
+        Returns the directory where the pretrianed model is saved.
         """
         return f"{self._model_path}/{self._model_name}"
 
     @property
     def save_path(self) -> str:
         """
-        Experimental
+        Returns the path where the finetuned model is saved.
         """
         return f"{self._save_path}/{self._save_as}"
 
@@ -314,92 +320,135 @@ class Config:
     @property
     def use_lora(self):
         """
-        Experimental
+        Returns a boolean value indicating whether
+        lora is used or not.
         """
         return self._use_lora
 
     @property
     def lora_alpha(self):
         """
-        Experimental
+        Returns the lora alpha value.
         """
         return self._lora_alpha
 
     @property
     def lora_rank(self):
         """
-        Experimental
+        Returns the lora rank value.
         """
         return self._lora_rank
 
     @property
     def lr(self):
-        """Experiment"""
+        """
+        Returns the learning rate used for training.
+        """
         return self._learning_rate
 
     @property
     def epochs(self):
-        """Experiment"""
+        """
+        Returns the number of epochs to train the model.
+        """
         return self._epochs
 
     @property
     def batch_size(self):
-        """Experiment"""
+        """
+        Returns the batch size used for training.
+        """
         return self._batch_size
 
     @property
     def drop_last(self):
-        """Experiment"""
+        """
+        Returns a boolean value indicating whether
+        the last batch is dropped or not.
+        """
         return self._drop_last
 
     @property
     def shuffle(self):
-        """Experiment"""
+        """
+        Returns a boolean value indicating whether
+        the data is shuffled or not.
+        """
         return self._shuffle
 
     @property
     def mask_input(self):
-        """Experiment"""
+        """
+        Returns a boolean value indicating whether
+        the input is masked or not.
+        This is used to mask the input and response
+        query so that the model only predicts the response
+        and not the input again.
+        """
         return self._mask_input
 
     @property
     def style_name(self):
-        """Experiment"""
+        """
+        Returns the style name used for training.
+        Ex: `alpaca` or `phi3`
+        """
         return self._style_name
 
     @property
     def prompt(self):
-        """Experiment"""
+        """
+        The prompt that is used to create the instruction
+        style. This is used to create the instruction style
+        used for training, usually used for alpaca style.
+        """
         return self._prompt
 
     @property
     def input_query(self):
-        """Experiment"""
+        """
+        Returns the input query that is used to create the instruction.
+        """
         return self._input_query
 
     @property
     def response_query(self):
-        """Experiment"""
+        """
+        Returns the response query that is used to create
+        the instruction style.
+        """
         return self._response_query
 
     @property
     def input_col(self):
-        """Experiment"""
+        """
+        Returns the input column name of the dataframe
+        that will be used as input to the model.
+        """
         return self._input_col
 
     @property
     def response_col(self):
-        """Experiment"""
+        """
+        Returns the response column name of the dataframe
+        that will be used as response to the model.
+        """
         return self._response_col
 
     @property
     def output_col(self):
-        """Experiment"""
+        """
+        Returns the output column name of the dataframe
+        that will be used to store the instruction styled data.
+        """
         return self._output_col
 
     @property
     def new_df(self):
-        """Experiment"""
+        """
+        Retuns a boolean value indicating whether
+        a new dataframe is created or not.
+        """
         return self._new_df
 
     def set_dtype(self, dtype: torch.dtype):
