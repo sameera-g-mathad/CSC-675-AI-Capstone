@@ -47,5 +47,5 @@ style:
 # Training params.
 train:
   learning_rate: 1e-5
-  epochs: 3
+  epochs: 5
   weight_decay: 0.1
