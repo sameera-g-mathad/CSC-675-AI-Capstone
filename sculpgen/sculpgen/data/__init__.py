@@ -10,11 +10,10 @@ class Data:
         for filenum, filename in enumerate(os.listdir(directory)):
             _, ext = os.path.splitext(filename)
             old_path = os.path.join(directory, filename)
-            with Image.open(old_path) as image:
-                new_name = f"abstract_{filenum + 1}{ext}"
-                new_path = os.path.join(directory, new_name)
-                image = image.resize((500, 500))
-                image.save(new_path, format="JPEG")
+            # with Image.open(old_path) as image:
+            new_name = f"abstract_{filenum + 1}{ext}"
+            new_path = os.path.join(directory, new_name)
+            os.rename(old_path, new_path)
 
     def download_from_hf_datasets(self, repo_name: str, output_dir: str):
         """Experimental"""
@@ -33,7 +32,7 @@ data = Data()
 data.rename(
     "/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/abstract"
 )
-data.download_from_hf_datasets(
-    repo_name="Durgas/Indian_sculptures",
-    output_dir="/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/sculptures",
-)
+# data.download_from_hf_datasets(
+#     repo_name="Durgas/Indian_sculptures",
+#     output_dir="/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/sculptures",
+# )

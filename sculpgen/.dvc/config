@@ -1,0 +1,3 @@
+['remote "sculpgen-remote"']
+    url = s3://ai-capstone-s3-bucket/sculpgen/data
+    region = us-east-2

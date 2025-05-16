@@ -27,5 +27,5 @@ packages = ["sculpgen"]
 dependencies = {file = ["requirements/requirements.txt"]}
 
 [tool.setuptools.dynamic.optional-dependencies]
-dev = {file = ["requirements/requirements-dev.txt"]}
+dev = {file = ["requirements/requirements_dev.txt"]}
 
