@@ -17,5 +17,14 @@ install_dev:
 	${PYTHON_INTERPRETER}${PYTHON_VERSION} --version
 	pip3 install .[dev]
 
+
+pipreqs:
+	pipreqs . --force --scan-notebooks --savepath requirements/requirements.txt
+
 ruff:
 	ruff check .
+
+
+##### data related commands
+images:
+	${PYTHON_INTERPRETER}${PYTHON_VERSION} ${PROJECT_NAME}/data/__init__.py
