@@ -28,3 +28,6 @@ ruff:
 ##### data related commands
 images:
 	${PYTHON_INTERPRETER}${PYTHON_VERSION} ${PROJECT_NAME}/data/__init__.py
+
+model:
+	${PYTHON_INTERPRETER}${PYTHON_VERSION} ${PROJECT_NAME}/model.py
