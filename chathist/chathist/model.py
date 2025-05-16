@@ -34,17 +34,18 @@ class Model:
         self._log = chathist.config.log
         self._save_path = chathist.config.save_path
 
+        self._log.info("Device Selected: %s", self._device)
         self._style = InstructionStyle.load()
         self._model = GPT2()
 
         if os.path.exists(self._save_path):
             self._log.info(
-                "Trained model exists on saved path %s\n",
+                "Loading saved model on path %s\n",
                 self._save_path,
             )
             self._train_model = False
 
-            checkpoint = torch.load(self._save_path)
+            checkpoint = torch.load(self._save_path, map_location=self._device)
 
             self._model.load_state_dict(checkpoint)
 

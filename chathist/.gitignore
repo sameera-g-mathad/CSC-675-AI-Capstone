@@ -13,5 +13,4 @@ example.ipynb
 *.vscode*
 
 /models
-
 .ruff
