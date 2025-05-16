@@ -108,7 +108,17 @@ class Config:
 
         # The logger is set to the name of the class.
         self._log = logging.getLogger(__name__)
+        self.load_config(
+            config_path=config_path, config_name=config_name, defaults=defaults
+        )
 
+    def load_config(
+        self,
+        config_path: str = "conf",
+        config_name: str = "config",
+        defaults: str = "train",
+    ):
+        """Experimental"""
         # The config file is read using hydra and omegaconf.
         with initialize(config_path=config_path, version_base=None):
             self._cfg = compose(config_name=config_name)
