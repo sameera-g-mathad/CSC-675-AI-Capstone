@@ -1,0 +1,31 @@
+[build-system]
+requires = ['setuptools', 'setuptools-scm']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'sculpgen'
+
+version = '0.0.1'
+
+description = "This project is for implementing Neural Style transfer with two datasets"
+
+authors = [{name="Sameer Gururaj Mathad", email = "smathad@depaul.edu"}]
+
+requires-python = ">=3.12"
+
+dynamic = ["dependencies", "optional-dependencies"]
+
+readme = "README.md"
+
+keywords = ["Neural Style transfer", "pytorch", "VGG19"]
+
+
+[tool.setuptools]
+packages = ["sculpgen"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements/requirements.txt"]}
+
+[tool.setuptools.dynamic.optional-dependencies]
+dev = {file = ["requirements/requirements-dev.txt"]}
+
