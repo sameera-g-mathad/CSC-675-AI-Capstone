@@ -1,0 +1,3 @@
+['remote "model-remote"']
+    url = s3://ai-capstone-s3-bucket/models
+    region = us-east-2

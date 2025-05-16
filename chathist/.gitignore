@@ -4,6 +4,7 @@
 *archive*
 *venv*
 *egg*
+*.env
 
 *build*
 
