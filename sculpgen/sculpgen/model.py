@@ -1,5 +1,7 @@
 import os
 import torch
+import random
+import time
 from tqdm import tqdm
 from torchvision.transforms import transforms
 from torchvision.utils import save_image
@@ -11,19 +13,37 @@ from sculpgen import RYaml, VGG19
 class Model(RYaml):
     """Experimental"""
 
-    def __init__(self):
+    def __init__(self, yaml_file_path: str):
         super().__init__()
-        self._styles_len = len(
-            os.listdir(
-                "/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/abstract"
+        self.read_yaml(yaml_file_path=yaml_file_path)
+
+        random_seed = self._content["train"]["random_seed"]
+        torch.manual_seed(random_seed)
+        random.seed(random_seed)
+
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        try:
+            self._styles_len = len(
+                os.listdir(self._content["train"]["abstract_folder"])
             )
-        )
+
+        except FileNotFoundError as e:
+            self._log.error(e)
+
         self._model = VGG19()
+        self._model.to(self._device)
         self._model.eval()
-        self._df = load_dataset("Durgas/Indian_sculptures")
+
+        self._df = load_dataset(self._content["train"]["huggingfaace_repo"])
+
+        self._save_path = self._content["train"]["save_path"]
+        os.makedirs(self._save_path, exist_ok=True)
+
+        resize = int(self._content["train"]["resize"])
         self._transforms = transforms.Compose(
             [
-                transforms.Resize((256, 256)),
+                transforms.Resize((resize, resize)),
                 transforms.ToTensor(),
                 transforms.Normalize(
                     [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
@@ -47,51 +67,119 @@ class Model(RYaml):
         target_gram = self.gram_matrix(target)
         return torch.mean((style_gram - target_gram) ** 2)
 
-    def train(self):
+    def train(
+        self,
+        content_image: torch.Tensor,
+        style_image: torch.Tensor,
+        target_image: torch.Tensor,
+    ):
+        """Experimental"""
+        optimizer = torch.optim.Adam(
+            [target_image], lr=self._content["train"]["learning_rate"]
+        )
+        epoch = self._content["train"]["epochs"]
+
+        content_image = content_image.to(self._device)
+        style_image = style_image.to(self._device)
+        target_image = target_image.to(self._device)
+
+        for _ in tqdm(range(epoch), colour="blue"):
+            conent_features = self._model(content_image)
+            style_features = self._model(style_image)
+            target_features = self._model(target_image)
+
+            optimizer.zero_grad()
+
+            style_loss = 0.0
+            content_loss = 0.0
+
+            for content_feature, style_feature, target_feature in zip(
+                conent_features, style_features, target_features
+            ):
+                content_loss += self.content_loss(
+                    content=content_feature, target=target_feature
+                )
+                style_loss += self.style_loss(
+                    style=style_feature, target=target_feature
+                )
+
+            loss: torch.Tensor = (
+                self._content["train"]["alpha"] * content_loss
+                + self._content["train"]["beta"] * style_loss
+            )
+
+            loss.backward()
+            optimizer.step()
+        # return target_image
+
+    def convert_nst(self):
         """Experimental"""
         if isinstance(self._df, DatasetDict):
-            for image in self._df["train"]["image"][:2]:
+            for content_image_num, image in enumerate(self._df["train"]["image"][:1]):
                 image = self._transforms(image)
-                style_image = Image.open(
-                    "/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/abstract/abstract_87.jpg"
-                )
-                style_image = self._transforms(style_image)
-                target_image = image.clone()
-                target_image.requires_grad = True
-
-                # print(image.shape, style_image.shape, target_image.shape)
-                optimizer = torch.optim.Adam([target_image], lr=0.01)
-                epoch = 200
-                for _ in tqdm(range(epoch), colour="blue"):
-                    conent_features = self._model(image)
-                    style_features = self._model(style_image)
-                    target_features = self._model(target_image)
-
-                    optimizer.zero_grad()
-
-                    style_loss = 0.0
-                    content_loss = 0.0
-
-                    for content_feature, style_feature, target_feature in zip(
-                        conent_features, style_features, target_features
-                    ):
-                        content_loss += self.content_loss(
-                            content=content_feature, target=target_feature
-                        )
-                        style_loss += self.style_loss(
-                            style=style_feature, target=target_feature
-                        )
-
-                    loss: torch.Tensor = torch.Tensor(
-                        1 * content_loss + 10000 * style_loss
+                for _ in range(self._content["train"]["images_per_content"]):
+                    style_image_num = random.randint(a=1, b=self._styles_len)
+                    # style_image_num = 1
+                    selected_filename = os.path.join(
+                        self._content["train"]["abstract_folder"],
+                        f"{self._content['train']['abstract_prefix']}{style_image_num}{self._content['train']['ext']}",
                     )
-                    loss.backward()
-                    optimizer.step()
+                    print(selected_filename)
+                    style_image = Image.open(selected_filename)
 
-                target_image = transforms.Normalize(
-                    (-2.12, -2.04, -1.80), (4.37, 4.46, 4.44)
-                )(target_image)
-                save_image(
-                    target_image,
-                    fp="/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/nst/output.jpg",
-                )
+                    style_image = self._transforms(style_image)
+                    # print(image.shape)
+                    target_image = image.clone()
+                    target_image.requires_grad = True
+
+                    # self.train(
+                    #     content_image=image,
+                    #     style_image=style_image,
+                    #     target_image=target_image,
+                    # )
+
+                    optimizer = torch.optim.Adam(
+                        [target_image], lr=self._content["train"]["learning_rate"]
+                    )
+                    epoch = self._content["train"]["epochs"]
+
+                    content_image = image.to(self._device)
+                    style_image = style_image.to(self._device)
+                    target_image = target_image.to(self._device)
+
+                    for _ in tqdm(range(epoch), colour="blue"):
+                        content_features = self._model(content_image)
+                        style_features = self._model(style_image)
+                        target_features = self._model(target_image)
+
+                        optimizer.zero_grad()
+
+                        style_loss = 0.0
+                        content_loss = 0.0
+
+                        for content_feature, style_feature, target_feature in zip(
+                            content_features, style_features, target_features
+                        ):
+                            content_loss += self.content_loss(
+                                content=content_feature, target=target_feature
+                            )
+                            style_loss += self.style_loss(
+                                style=style_feature, target=target_feature
+                            )
+
+                        loss: torch.Tensor = (
+                            self._content["train"]["alpha"] * content_loss
+                            + self._content["train"]["beta"] * style_loss
+                        )
+
+                        loss.backward()
+                        optimizer.step()
+
+                    target_image = transforms.Normalize(
+                        (-2.12, -2.04, -1.80), (4.37, 4.46, 4.44)
+                    )(target_image)
+
+                    save_image(
+                        target_image,
+                        fp=f"{self._save_path}/{self._content['train']['save_prefix']}content_{content_image_num}_style_{style_image_num}{self._content['train']['ext']}",
+                    )
