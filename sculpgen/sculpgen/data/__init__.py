@@ -27,7 +27,7 @@ class Data(RYaml):
                 new_name = f"{rename_prefix}{filenum + 1}{ext}"
                 new_path = os.path.join(directory, new_name)
                 os.rename(old_path, new_path)
-            self._log.info("Successfully renamed all files!!!")
+                self._log.info("Successfully renamed %s to %s", filename, new_name)
         except FileNotFoundError as e:
             self._log.error(e)
 

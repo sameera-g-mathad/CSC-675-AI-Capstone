@@ -5,12 +5,14 @@ from torchvision.transforms import transforms
 from torchvision.utils import save_image
 from PIL import Image
 from datasets import load_dataset, DatasetDict
-from sculpgen import VGG19
+from sculpgen import RYaml, VGG19
 
 
-class Model:
+class Model(RYaml):
+    """Experimental"""
 
     def __init__(self):
+        super().__init__()
         self._styles_len = len(
             os.listdir(
                 "/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/abstract"
@@ -30,19 +32,23 @@ class Model:
         )
 
     def content_loss(self, content: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """Experimental"""
         return torch.mean((content - target) ** 2)
 
     def gram_matrix(self, image: torch.Tensor) -> torch.Tensor:
+        """Experimental"""
         channel, width, height = image.shape
         image = image.view(channel, width * height)
         return image @ image.T
 
     def style_loss(self, style: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """Experimental"""
         style_gram = self.gram_matrix(style)
         target_gram = self.gram_matrix(target)
         return torch.mean((style_gram - target_gram) ** 2)
 
     def train(self):
+        """Experimental"""
         if isinstance(self._df, DatasetDict):
             for image in self._df["train"]["image"][:2]:
                 image = self._transforms(image)
@@ -89,8 +95,3 @@ class Model:
                     target_image,
                     fp="/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/nst/output.jpg",
                 )
-
-
-m = Model()
-
-m.train()
