@@ -2,7 +2,8 @@ ruff==0.11.9
 pipreqs==0.5.0
 dvc-s3==3.2.0
 python-dotenv==1.1.0
-pillow==11.2.1
+pillow==11.2.1 # Required by huggingface
+PyYAML==6.0.2
 # If you are using jupyter and see `TqdmWarning: IProgress not found. Please update jupyter and ipywidgets.`, install them.
 jupyter==1.1.1 
 ipywidgets==8.1.7

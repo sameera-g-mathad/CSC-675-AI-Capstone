@@ -1,0 +1,4 @@
+data:
+  directory: '/home/smathad/ai_capstone/sculpgen/data/abstract' # Your data folder path
+  rename: True
+  rename_prefix: 'abstract_'
