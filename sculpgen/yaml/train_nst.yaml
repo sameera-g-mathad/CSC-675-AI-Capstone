@@ -7,7 +7,7 @@ train:
   learning_rate: 0.01 # Learning rate for the optimizer
   alpha: 1 # Weight for the content loss
   beta: 10000 # Weight for the style loss
-  resize: 256 # Size to resize the images to
+  resize: 512 # Size to resize the images to
   images_per_content: 2 # Number of images to use for each content image
   save_prefix: 'sculpture_' # Prefix for the saved images
   save_path: '/home/smathad/ai_capstone/sculpgen/data/nst' # Path to save the generated images

@@ -17,16 +17,14 @@ class Model(RYaml):
         super().__init__()
         self.read_yaml(yaml_file_path=yaml_file_path)
 
-        random_seed = self._content["train"]["random_seed"]
+        random_seed = self._config["train"]["random_seed"]
         torch.manual_seed(random_seed)
         # random.seed(random_seed) # You can uncomment if you want similar images.
 
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
         try:
-            self._styles_len = len(
-                os.listdir(self._content["train"]["abstract_folder"])
-            )
+            self._styles_len = len(os.listdir(self._config["train"]["abstract_folder"]))
 
         except FileNotFoundError as e:
             self._log.error(e)
@@ -35,12 +33,12 @@ class Model(RYaml):
         self._model.to(self._device)
         self._model.eval()
 
-        self._df = load_dataset(self._content["train"]["huggingfaace_repo"])
+        self._df = load_dataset(self._config["train"]["huggingfaace_repo"])
 
-        self._save_path = self._content["train"]["save_path"]
+        self._save_path = self._config["train"]["save_path"]
         os.makedirs(self._save_path, exist_ok=True)
 
-        resize = int(self._content["train"]["resize"])
+        resize = int(self._config["train"]["resize"])
         self._transforms = transforms.Compose(
             [
                 transforms.Resize((resize, resize)),
@@ -52,7 +50,7 @@ class Model(RYaml):
         )
         self._denormalize = transforms.Normalize(
             (-2.12, -2.04, -1.80), (4.37, 4.46, 4.44)
-        )
+        )  # ImageNet stats.
 
     def content_loss(self, content: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """Experimental"""
@@ -63,7 +61,7 @@ class Model(RYaml):
         """Experimental"""
         channel, width, height = image.shape
         image = image.view(channel, width * height)
-        gram_mat = (image @ image.T) / (channel * width * height)
+        gram_mat = torch.mm(image, image.T)
 
         return gram_mat
 
@@ -72,7 +70,6 @@ class Model(RYaml):
         style_gram = self.gram_matrix(style)
         target_gram = self.gram_matrix(target)
         style_loss = torch.mean((style_gram - target_gram) ** 2)
-
         return style_loss
 
     def train(
@@ -80,27 +77,26 @@ class Model(RYaml):
         content_image: torch.Tensor,
         style_image: torch.Tensor,
         target_image: torch.Tensor,
-        *args,
-    ):
+    ) -> torch.Tensor:
         """Experimental"""
-        optimizer = torch.optim.Adam(
-            [target_image], lr=self._content["train"]["learning_rate"]
-        )
-        epoch = self._content["train"]["epochs"]
 
         content_image = content_image.to(self._device)
         style_image = style_image.to(self._device)
         target_image = target_image.to(self._device)
-
         target_image.requires_grad = True
-        content_image_num, style_image_num = args
+
+        optimizer = torch.optim.Adam(
+            [target_image], lr=self._config["train"]["learning_rate"]
+        )
+        epoch = self._config["train"]["epochs"]
 
         for _ in tqdm(range(epoch), colour="blue"):
+
+            optimizer.zero_grad()
+
             content_features = self._model(content_image)
-            print("content", content_features[0].requires_grad)
             style_features = self._model(style_image)
             target_features = self._model(target_image)
-            optimizer.zero_grad()
 
             style_loss = 0.0
             content_loss = 0.0
@@ -116,42 +112,40 @@ class Model(RYaml):
                 )
 
             loss: torch.Tensor = (
-                self._content["train"]["alpha"] * content_loss
-                + self._content["train"]["beta"] * style_loss
+                self._config["train"]["alpha"] * content_loss
+                + self._config["train"]["beta"] * style_loss
             )
             loss.backward()
 
             optimizer.step()
-
-        target_image = self._denormalize(target_image)
-        save_image(
-            target_image,
-            fp=f"{self._save_path}/{self._content['train']['save_prefix']}content_{content_image_num}_style_{style_image_num}{self._content['train']['ext']}",
-        )
+        return target_image
 
     def convert_nst(self):
         """Experimental"""
         if isinstance(self._df, DatasetDict):
             for content_image_num, image in enumerate(self._df["train"]["image"][:1]):
-                image = self._transforms(image)
-                for _ in range(self._content["train"]["images_per_content"]):
+                content_image = self._transforms(image)
+                for _ in range(self._config["train"]["images_per_content"]):
                     style_image_num = random.randint(a=1, b=self._styles_len)
 
                     selected_filename = os.path.join(
-                        self._content["train"]["abstract_folder"],
-                        f"{self._content['train']['abstract_prefix']}{style_image_num}{self._content['train']['ext']}",
+                        self._config["train"]["abstract_folder"],
+                        f"{self._config['train']['abstract_prefix']}{style_image_num}{self._config['train']['ext']}",
                     )
 
                     style_image = Image.open(selected_filename).convert("RGB")
 
-                    style_image = self._transforms(style_image)
+                    style_image = torch.Tensor(self._transforms(style_image))
 
-                    target_image = image.clone().detach()
+                    target_image = content_image.clone().detach()
 
-                    self.train(
-                        image,
+                    target_image = self.train(
+                        content_image,
                         style_image,
                         target_image,
-                        content_image_num,
-                        style_image_num,
+                    )
+                    target_image = self._denormalize(target_image)
+                    save_image(
+                        target_image,
+                        fp=f"{self._save_path}/{self._config['train']['save_prefix']}content_{content_image_num}_style_{style_image_num}{self._config['train']['ext']}",
                     )
