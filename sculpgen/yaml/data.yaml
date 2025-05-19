@@ -1,0 +1,14 @@
+rename:
+  # Path to the directory containing the images
+  directory: '/home/smathad/ai_capstone/sculpgen/data/abstract' # Your data folder path
+  rename: True
+  rename_prefix: 'abstract_' # Prefix to add to the file names
+  
+huggingface:
+  
+  huggingface_repo: "Durgas/Indian_sculptures"
+  download: True
+  save_prefix: 'sculpture_'
+  extension: '.jpg'
+  # Path to the directory where the images will be saved
+  save_dir: '/home/smathad/ai_capstone/sculpgen/data/sculptures' # Your data folder path

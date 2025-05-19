@@ -14,11 +14,11 @@ class Data(RYaml):
     def rename(self):
         """Experimental"""
         try:
-            directory = self._content["data"]["directory"]
-            rename = self._content["data"]["rename"]
-            rename_prefix = self._content["data"]["rename_prefix"]
+            directory = self._config["data"]["directory"]
+            rename = self._config["data"]["rename"]
+            rename_prefix = self._config["data"]["rename_prefix"]
             if not rename:
-                self._log.info("Rename is %s and files cannot be renamed", rename)
+                self._log.info("Rename flag is %s and files cannot be renamed", rename)
                 return
             self._log.info("Reading files from %s", directory)
             for filenum, filename in enumerate(os.listdir(directory)):
@@ -31,17 +31,36 @@ class Data(RYaml):
         except FileNotFoundError as e:
             self._log.error(e)
 
-    # def download_from_hf_datasets(self, repo_name: str, output_dir: str):
-    #     """Experimental"""
-    #     df = load_dataset(path=repo_name)
-    #     if isinstance(df, DatasetDict):
-    #         for image_num, image in enumerate(df["train"]["image"]):
-    #             if isinstance(image, Image.Image):
-    #                 new_file = f"sculpture_{image_num}.jpg"
-    #                 file_path = os.path.join(output_dir, new_file)
-    #                 image = image.resize((500, 500))
-    #                 image = image.convert("RGB")
-    #                 image.save(file_path, format="JPEG")
+    def download_from_hf_datasets(self):
+        """Experimental"""
+        try:
+            is_download = self._config["huggingface"]["download"]
+            if not is_download:
+                self._log.info(
+                    "Download flag is %s and files cannot be renamed", is_download
+                )
+                return
+            self._log.info(
+                "Downloading files from %s",
+                self._config["huggingface"]["huggingface_repo"],
+            )
+            df = load_dataset(path=self._config["huggingface"]["huggingface_repo"])
+            if isinstance(df, DatasetDict):
+                for image_num, image in enumerate(df["train"]["image"]):
+                    if isinstance(image, Image.Image):
+                        new_file = f"{self._config["huggingface"]["prefix"]}{image_num}{self._config["huggingface"]["extension"]}"
+                        file_path = os.path.join(
+                            self._config["huggingface"]["save_dir"], new_file
+                        )
+                        image = image.convert("RGB")
+                        image.save(file_path, format="JPEG")
+                        self._log.info(
+                            "Successfully downloaded %s to %s",
+                            self._config["huggingface"]["huggingface_repo"],
+                            file_path,
+                        )
+        except FileNotFoundError as e:
+            self._log.error(e)
 
 
 # data = Data("/home/smathad/ai_capstone/sculpgen/yaml/config.yaml")
