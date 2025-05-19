@@ -6,7 +6,6 @@ from torch import nn
 
 class VGG19(nn.Module):
     """
-    @note: Comments are generated with the help of co-pilot.
 
     This class implements a VGG19 model for feature extraction.
     It uses the pretrained VGG19 model from torchvision and extracts features

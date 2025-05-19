@@ -1,8 +1,8 @@
 rename:
   # Path to the directory containing the images
-  directory: '/home/smathad/ai_capstone/sculpgen/data/abstract' # Your data folder path
+  directory: '/home/smathad/ai_capstone/sculpgen/data/sculptures' # Your data folder path
   rename: True
-  rename_prefix: 'abstract_' # Prefix to add to the file names
+  rename_prefix: 'sculpture_' # Prefix to add to the file names
 
 huggingface:
   huggingface_repo: 'Durgas/Indian_sculptures'

@@ -5,13 +5,13 @@ from tqdm import tqdm
 from torchvision.transforms import transforms
 from torchvision.utils import save_image
 from PIL import Image
-from datasets import load_dataset, DatasetDict
+
+# from datasets import load_dataset, DatasetDict
 from sculpgen import RYaml, VGG19
 
 
 class NSTModel(RYaml):
     """
-    @note: Comments are generated with the help of co-pilot.
 
     This class implements a Neural Style Transfer (NST) model using VGG19.
     It inherits from the RYaml class which is used to read the configuration file.
@@ -56,10 +56,10 @@ class NSTModel(RYaml):
 
         # Load the dataset from Hugging Face
         self._log.info("Loading dataset from Hugging Face.")
-        self._log.info(
-            "Hugging Face repo: %s", self._config["train"]["huggingfaace_repo"]
-        )
-        self._df = load_dataset(self._config["train"]["huggingfaace_repo"])
+        # self._log.info(
+        #     "Hugging Face repo: %s", self._config["train"]["huggingfaace_repo"]
+        # )
+        # self._df = load_dataset(self._config["train"]["huggingfaace_repo"])
         self._log.info("Dataset loaded successfully.")
 
         # Create the save path for the generated images
@@ -222,56 +222,65 @@ class NSTModel(RYaml):
         @note: The content and style images are passed through
         the train method to generate the stylized image.
         """
-        if isinstance(self._df, DatasetDict):
+        # if isinstance(self._df, DatasetDict):
 
-            # If the dataset is a DatasetDict, we need to get the train split
-            self._df = self._df["train"]
-            # Iterate through the dataset and generate stylized images.
-            # self._df has images and labels in them
-            # You can check the dataset 'https://huggingface.co/datasets/Durgas/Indian_sculptures'.
+        # If the dataset is a DatasetDict, we need to get the train split
+        # self._df = self._df["train"]
+        # Iterate through the dataset and generate stylized images.
+        # self._df has images and labels in them
+        # You can check the dataset 'https://huggingface.co/datasets/Durgas/Indian_sculptures'.
 
-            for content_image_num, image in enumerate(
-                tqdm(self._df["image"], colour="yellow")
-            ):
-                self._log.info("Processing content image %s", content_image_num)
-                # Transform the image to a tensor and normalize it
-                content_image = self._transforms(image)
+        for content_image_num in tqdm(
+            range(1, len(os.listdir(self._config["train"]["sculpture_folder"]))),
+            colour="yellow",
+        ):
+            self._log.info("Processing content image %s", content_image_num)
+            # Transform the image to a tensor and normalize it
+            image = Image.open(
+                os.path.join(
+                    self._config["train"]["sculpture_folder"],
+                    f"{self._config['train']['sculpture_prefix']}"
+                    f"{content_image_num}{self._config['train']['ext']}",
+                )
+            ).convert("RGB")
+            content_image = self._transforms(image)
+            content_image = torch.Tensor(content_image)
 
-                # Iterate for the number of images per content to generate
-                # multiple stylized images for each content image
-                for _ in range(self._config["train"]["images_per_content"]):
+            # Iterate for the number of images per content to generate
+            # multiple stylized images for each content image
+            for _ in range(self._config["train"]["images_per_content"]):
 
-                    # Randomly select a style image from the abstract folder
-                    style_image_num = random.randint(a=1, b=self._styles_len)
+                # Randomly select a style image from the abstract folder
+                style_image_num = random.randint(a=1, b=self._styles_len)
 
-                    selected_filename = os.path.join(
-                        self._config["train"]["abstract_folder"],
-                        (
-                            f"{self._config['train']['abstract_prefix']}"
-                            f"{style_image_num}{self._config['train']['ext']}"
-                        ),
-                    )
+                selected_filename = os.path.join(
+                    self._config["train"]["abstract_folder"],
+                    (
+                        f"{self._config['train']['abstract_prefix']}"
+                        f"{style_image_num}{self._config['train']['ext']}"
+                    ),
+                )
 
-                    style_image = Image.open(selected_filename).convert("RGB")
-                    style_image = torch.Tensor(self._transforms(style_image))
+                style_image = Image.open(selected_filename).convert("RGB")
+                style_image = torch.Tensor(self._transforms(style_image))
 
-                    # Copy/Clone the content image to a tensor
-                    target_image = content_image.clone().detach()
+                # Copy/Clone the content image to a tensor
+                target_image = content_image.clone().detach()
 
-                    # Train the model to generate a stylized image.
-                    target_image = self._train(
-                        content_image,
-                        style_image,
-                        target_image,
-                    )
+                # Train the model to generate a stylized image.
+                target_image = self._train(
+                    content_image,
+                    style_image,
+                    target_image,
+                )
 
-                    # Denormalize the target image and save it to the specified save path
-                    target_image = self._denormalize(target_image)
-                    save_image(
-                        target_image,
-                        fp=(
-                            f"{self._save_path}/{self._config['train']['save_prefix']}"
-                            f"content_{content_image_num}"
-                            f"_style_{style_image_num}{self._config['train']['ext']}"
-                        ),
-                    )
+                # Denormalize the target image and save it to the specified save path
+                target_image = self._denormalize(target_image)
+                save_image(
+                    target_image,
+                    fp=(
+                        f"{self._save_path}/{self._config['train']['save_prefix']}"
+                        f"content_{content_image_num}"
+                        f"_style_{style_image_num}{self._config['train']['ext']}"
+                    ),
+                )
