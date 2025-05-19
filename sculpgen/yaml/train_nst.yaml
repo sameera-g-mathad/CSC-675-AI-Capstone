@@ -3,7 +3,7 @@ train:
   abstract_prefix: 'abstract_' # Prefix for the style images
   ext: '.jpg' # Extension of the style images
   huggingfaace_repo: Durgas/Indian_sculptures # Repo that I am using for training NST.
-  epochs: 100 # Number of epochs to train
+  epochs: 150 # Number of epochs to train
   learning_rate: 0.01 # Learning rate for the optimizer
   alpha: 1 # Weight for the content loss
   beta: 10000 # Weight for the style loss
