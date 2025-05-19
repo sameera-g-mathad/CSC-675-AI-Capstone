@@ -231,7 +231,7 @@ class NSTModel(RYaml):
             # You can check the dataset 'https://huggingface.co/datasets/Durgas/Indian_sculptures'.
 
             for content_image_num, image in enumerate(
-                tqdm(self._df["image"][:1], colour="yellow")
+                tqdm(self._df["image"], colour="yellow")
             ):
                 self._log.info("Processing content image %s", content_image_num)
                 # Transform the image to a tensor and normalize it
