@@ -1,7 +1,6 @@
 import os
-import torch
 import random
-import time
+import torch
 from tqdm import tqdm
 from torchvision.transforms import transforms
 from torchvision.utils import save_image
@@ -18,7 +17,8 @@ class NSTModel(RYaml):
     It inherits from the RYaml class which is used to read the configuration file.
     The class is used to generate stylized images using a content image and a style image.
     The class uses the VGG19 model to extract features from the content and style images.
-    The class uses the Adam optimizer to update the target image to minimize the content and style loss.
+    The class uses the Adam optimizer to update the target image
+    to minimize the content and style loss.
     The class uses the PyTorch library to perform the computations on the GPU if available.
     """
 
@@ -118,8 +118,10 @@ class NSTModel(RYaml):
 
     def _style_loss(self, style: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
-        This method calculates the style loss between the style and target images.
-        The style loss is defined as the mean squared error between the Gram matrices of the style and target images.
+        This method calculates the style loss between
+        the style and target images.
+        The style loss is defined as the mean squared error between the
+        Gram matrices of the style and target images.
 
         @param style: The style image tensor.
         @param target: The target image tensor.
@@ -213,21 +215,25 @@ class NSTModel(RYaml):
     def convert_nst(self):
         """
         This method is used as a wrapper to call the train method.
-        It iterates through the dataset and generates stylized images using the content and style images.
+        It iterates through the dataset and generates stylized images
+        using the content and style images.
         It saves the generated images to the specified save path.
 
-        @note: The content and style images are passed through the train method to generate the stylized image.
+        @note: The content and style images are passed through
+        the train method to generate the stylized image.
         """
         if isinstance(self._df, DatasetDict):
 
             # If the dataset is a DatasetDict, we need to get the train split
             self._df = self._df["train"]
-            # Iterate through the dataset and generate stylized images. self._df has images and labels in them
+            # Iterate through the dataset and generate stylized images.
+            # self._df has images and labels in them
             # You can check the dataset 'https://huggingface.co/datasets/Durgas/Indian_sculptures'.
 
             for content_image_num, image in enumerate(
                 tqdm(self._df["image"][:1], colour="yellow")
             ):
+                self._log.info("Processing content image %s", content_image_num)
                 # Transform the image to a tensor and normalize it
                 content_image = self._transforms(image)
 
