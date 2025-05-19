@@ -14,9 +14,9 @@ class Data(RYaml):
     def rename(self):
         """Experimental"""
         try:
-            directory = self._config["data"]["directory"]
-            rename = self._config["data"]["rename"]
-            rename_prefix = self._config["data"]["rename_prefix"]
+            directory = self._config["rename"]["directory"]
+            rename = self._config["rename"]["rename"]
+            rename_prefix = self._config["rename"]["rename_prefix"]
             if not rename:
                 self._log.info("Rename flag is %s and files cannot be renamed", rename)
                 return
@@ -40,6 +40,8 @@ class Data(RYaml):
                     "Download flag is %s and files cannot be renamed", is_download
                 )
                 return
+            os.makedirs(self._config["huggingface"]["save_dir"], exist_ok=True)
+
             self._log.info(
                 "Downloading files from %s",
                 self._config["huggingface"]["huggingface_repo"],
@@ -48,7 +50,7 @@ class Data(RYaml):
             if isinstance(df, DatasetDict):
                 for image_num, image in enumerate(df["train"]["image"]):
                     if isinstance(image, Image.Image):
-                        new_file = f"{self._config["huggingface"]["prefix"]}{image_num}{self._config["huggingface"]["extension"]}"
+                        new_file = f"{self._config["huggingface"]["save_prefix"]}{image_num + 1}{self._config["huggingface"]["extension"]}"
                         file_path = os.path.join(
                             self._config["huggingface"]["save_dir"], new_file
                         )
