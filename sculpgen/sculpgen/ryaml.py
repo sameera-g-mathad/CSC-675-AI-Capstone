@@ -7,7 +7,7 @@ class RYaml:
     Experimental
     """
 
-    _content: dict
+    _config: dict
 
     def __init__(self):
         """
@@ -19,7 +19,7 @@ class RYaml:
         """Experimental"""
         try:
             with open(file=yaml_file_path, mode="r", encoding="utf-8") as yaml_file:
-                self._content = yaml.safe_load(yaml_file)
+                self._config = yaml.safe_load(yaml_file)
         except FileNotFoundError:
             print(f"No file found in specified path {yaml_file}")
             return
