@@ -7,13 +7,13 @@ config:
   model_name: 'gpt2-medium'
 
   # To load the gpt2 model from if present or download from hugginface
-  model_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models/pretrained' # Your path.
+  model_path: '/home/smathad/ai_capstone/chathist/models/pretrained' # Your path.
 
   # Name to save finetuned model.
   save_as: 'gpt2-medium_chat_title_finetuned'
 
   # Path to save finetuned model.
-  save_path: '/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/chathist/models/finetuned' # Your path.
+  save_path: '/home/smathad/ai_capstone/chathist/models/finetuned' # Your path.
 
 data:
   # DataLoader specific inputs.

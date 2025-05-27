@@ -84,7 +84,7 @@ class Model:
         self._log.info("Validation Loss: %s", total_loss / batches)
         self._model.train()
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, top_k: int = 0, temperature: float = 0.0) -> str:
         """Experimental"""
         if not self._style.is_format(prompt):
             self._log.info("Formatting prompt into %s style", self._style_name)
@@ -102,7 +102,20 @@ class Model:
                 # Making sure that all the logits are between 0 and 1.
                 last_token = torch.softmax(last_token, dim=-1)
 
-                token = torch.argmax(last_token, dim=-1, keepdim=True)
+                if top_k > 0:
+                    top_logits, _ = torch.topk(last_token, top_k)
+                    min_value = top_logits[:, -1]
+                    last_token = torch.where(
+                        last_token < min_value,
+                        torch.tensor(float("-inf")).to(self._device),
+                        last_token,
+                    )
+                if temperature > 0.0:
+                    last_token = last_token / temperature
+                    probs = torch.softmax(last_token, dim=-1)
+                    token = torch.multinomial(probs, num_samples=1)
+                else:
+                    token = torch.argmax(last_token, dim=-1, keepdim=True)
 
                 if token == self._endoftext:
                     break
