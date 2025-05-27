@@ -5,3 +5,5 @@ python-dotenv==1.1.0
 # If you are using jupyter and see `TqdmWarning: IProgress not found. Please update jupyter and ipywidgets.`, install them.
 jupyter==1.1.1 
 ipywidgets==8.1.7
+uvicorn==0.34.2
+fastapi==0.115.12

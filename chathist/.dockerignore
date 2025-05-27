@@ -1,0 +1,11 @@
+# Ignore everything
+
+-
+
+# Don't Ignore
+
+!chathist/
+!models/finetuned/
+!requirements/
+!pyproject.toml
+!server/

@@ -12,8 +12,8 @@ config:
   # Name to save finetuned model.
   save_as: 'gpt2-xl_indian_history_finetuned'
 
-  # Path to save finetuned model.
-  save_path: '/home/smathad/ai_capstone/chathist/models/finetuned' # Your path.
+  # Path to save finetuned model. Changed for docker compatibility.
+  save_path: 'models/finetuned' # Your path.
 
 data:
   # DataLoader specific inputs.
