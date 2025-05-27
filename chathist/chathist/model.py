@@ -33,9 +33,11 @@ class Model:
         self._epochs = chathist.config.epochs
         self._log = chathist.config.log
         self._save_path = chathist.config.save_path
+        self._context_length = chathist.config.gpt_flavor["context_length"]
 
         self._log.info("Device Selected: %s", self._device)
         self._style = InstructionStyle.load()
+        self._style_name = chathist.config.style_name
         self._model = GPT2()
 
         if os.path.exists(self._save_path):
@@ -58,7 +60,7 @@ class Model:
 
         self._model.to(self._device)
 
-    def calc_loss(self, inputs: torch.Tensor, targets: torch.Tensor):
+    def _calc_loss(self, inputs: torch.Tensor, targets: torch.Tensor):
         """Experiment"""
         inputs = inputs.to(self._device)
         targets = targets.to(self._device)
@@ -67,7 +69,7 @@ class Model:
         # pylint: disable=no-member
         return self._loss(logits.flatten(0, 1), targets.flatten().long())
 
-    def evaluate(self, _loader: torch.utils.data.DataLoader):
+    def _evaluate(self, _loader: torch.utils.data.DataLoader):
         """Experimental"""
         self._model.eval()
         total_loss = 0.0
@@ -75,7 +77,7 @@ class Model:
         batches = 0
         with torch.no_grad():
             for inputs, targets in tqdm(_loader, colour="blue"):
-                loss: torch.Tensor = self.calc_loss(inputs, targets)
+                loss: torch.Tensor = self._calc_loss(inputs, targets)
                 total_loss += loss.item()
                 batches += 1
 
@@ -85,16 +87,15 @@ class Model:
     def generate(self, prompt: str) -> str:
         """Experimental"""
         if not self._style.is_format(prompt):
-            self._log.info(
-                "Formatting prompt into %s style", chathist.config.style_name
-            )
+            self._log.info("Formatting prompt into %s style", self._style_name)
             prompt = self._style.format(prompt)
 
         token_ids = self._tokenizer.encode_text(prompt)
         token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
         self._model.eval()
         response = []
-        for _ in range(30):
+        token = 0  # Assign random value for now
+        for _ in range(self._context_length):
             with torch.inference_mode():
                 logits = self._model(token_ids)  # (1, token_len, emb_dim)
                 last_token = logits[:, -1, :]  # Get the last embedding
@@ -133,7 +134,7 @@ class Model:
 
                     self._optimizer.zero_grad()
 
-                    loss: torch.Tensor = self.calc_loss(inputs=inputs, targets=targets)
+                    loss: torch.Tensor = self._calc_loss(inputs=inputs, targets=targets)
 
                     total_loss += loss.item()
                     batches += 1
@@ -143,7 +144,7 @@ class Model:
 
                 self._log.info("Train Loss: %s", total_loss / batches)
                 if isinstance(val_loader, torch.utils.data.DataLoader):
-                    self.evaluate(val_loader)
+                    self._evaluate(val_loader)
             torch.save(self._model.state_dict(), self._save_path)
         else:
             self._log.warning(
