@@ -1,0 +1,16 @@
+{
+  "name": "chathist_backend",
+  "version": "1.0.0",
+  "description": "This is the server written in nodejs to serve finetuned llms from chathist and nst from sculpgen",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "author": "Sameer Gururaj Mathad",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.10"
+  }
+}
