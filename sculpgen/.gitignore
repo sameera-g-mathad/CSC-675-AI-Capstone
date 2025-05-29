@@ -1,4 +1,11 @@
 *.env
+*checkpoints*
+*__pycache__*
+*.DS*
+*archive*
+*venv*
+*egg*
+*.env
 *.vscode
 /build
 /*.egg*

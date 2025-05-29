@@ -7,7 +7,7 @@ app = FastAPI()
 
 app.mount(
     "/images",
-    StaticFiles(directory="/home/smathad/ai_capstone/sculpgen/data/nst"),
+    StaticFiles(directory="/Users/sameergururajmathad/Documents/CSC - 675/AI Capstone/sculpgen/data/nst"),
     name="images",
 )
 
