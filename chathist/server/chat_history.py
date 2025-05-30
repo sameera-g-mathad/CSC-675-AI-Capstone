@@ -42,9 +42,9 @@ app = FastAPI()
 chathist.config.load_config(config_path="conf/train", config_name="history")
 chat_hist_model = Model()
 
-# set second model - Chat title model
-chathist.config.load_config(config_path="conf/train", config_name="chat_title")
-chat_title_model = Model()
+# # set second model - Chat title model
+# chathist.config.load_config(config_path="conf/train", config_name="chat_title")
+# chat_title_model = Model()
 
 
 def _run(func: Callable):
@@ -91,16 +91,16 @@ def query_history(request: PromptInput) -> str:
     return chat_hist_model.generate(prompt=prompt)
 
 
-@app.get("/title", response_model=Response)
-@_run
-def query_title(request: PromptInput) -> str:
-    """
-    This function handles the query for the chat title model.
-    It takes a prompt as input and returns the generated response from the model.
+# @app.get("/title", response_model=Response)
+# @_run
+# def query_title(request: PromptInput) -> str:
+#     """
+#     This function handles the query for the chat title model.
+#     It takes a prompt as input and returns the generated response from the model.
 
-    :param request: PromptInput object containing the prompt to be processed.
-    :return: A dictionary containing the status and the generated response from the model.
-    :rtype: dict
-    """
-    prompt = request.prompt
-    return chat_title_model.generate(prompt=prompt)
+#     :param request: PromptInput object containing the prompt to be processed.
+#     :return: A dictionary containing the status and the generated response from the model.
+#     :rtype: dict
+#     """
+#     prompt = request.prompt
+#     return chat_title_model.generate(prompt=prompt)
