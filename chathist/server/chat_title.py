@@ -91,7 +91,7 @@ def _run(func: Callable):
 #     return chat_hist_model.generate(prompt=prompt)
 
 
-@app.get("/title", response_model=Response)
+@app.post("/api/v1/title", response_model=Response)
 @_run
 def query_title(request: PromptInput) -> str:
     """

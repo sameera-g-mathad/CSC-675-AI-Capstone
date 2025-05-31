@@ -12,4 +12,4 @@ COPY server server
 RUN pip3 install . --no-cache
 RUN pip3 install ."[dev]" --no-cache
 
-ENTRYPOINT ["sh", "-c", "uvicorn server.chat_title:app --reload" ]
+ENTRYPOINT ["sh", "-c", "uvicorn server.chat_title:app --host  0.0.0.0 --reload --port 8001" ]

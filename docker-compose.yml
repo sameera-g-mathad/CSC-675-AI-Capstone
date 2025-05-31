@@ -1,24 +1,17 @@
 services:
-  chat_history:
-    build:
-      context: './chathist'
-      dockerfile: 'dockerfiles/chat_history.dockerfile'
-    ports:
-      - '8000'
-    mem_limit: 10g
+  # chat_history:
+  #   build:
+  #     context: './chathist'
+  #     dockerfile: 'dockerfiles/chat_history.dockerfile'
+  #   ports:
+  #     - '8000'
+  #   mem_limit: 10g
   chat_title:
     build:
       context: './chathist'
       dockerfile: 'dockerfiles/chat_title.dockerfile'
-    ports:
-      - '8001'
-
-  # sculpgen:
-  #   build:
-  #     context: './sculpgen'
-  #     dockerfile: 'sculpgen.dockerfile'
-  #   ports:
-  #     - '8001'
+    # ports:
+    #   - '8001'
 
   server:
     build:
