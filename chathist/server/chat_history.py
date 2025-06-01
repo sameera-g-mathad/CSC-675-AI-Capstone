@@ -76,7 +76,7 @@ def _run(func: Callable):
     return wrapper
 
 
-@app.get("/query", response_model=Response)
+@app.post("/api/v1/query", response_model=Response)
 @_run
 def query_history(request: PromptInput) -> str:
     """
@@ -91,16 +91,3 @@ def query_history(request: PromptInput) -> str:
     return chat_hist_model.generate(prompt=prompt)
 
 
-# @app.get("/title", response_model=Response)
-# @_run
-# def query_title(request: PromptInput) -> str:
-#     """
-#     This function handles the query for the chat title model.
-#     It takes a prompt as input and returns the generated response from the model.
-
-#     :param request: PromptInput object containing the prompt to be processed.
-#     :return: A dictionary containing the status and the generated response from the model.
-#     :rtype: dict
-#     """
-#     prompt = request.prompt
-#     return chat_title_model.generate(prompt=prompt)

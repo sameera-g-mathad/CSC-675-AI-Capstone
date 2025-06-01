@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Generator, Any
 import os
 import logging
 from tqdm import tqdm
@@ -84,7 +84,9 @@ class Model:
         self._log.info("Validation Loss: %s", total_loss / batches)
         self._model.train()
 
-    def generate(self, prompt: str, top_k: int = 0, temperature: float = 0.0) -> str:
+    def generate(
+        self, prompt: str, top_k: int = 0, temperature: float = 0.0
+    ) -> Generator[str, Any, Any]:
         """Experimental"""
         if not self._style.is_format(prompt):
             self._log.info("Formatting prompt into %s style", self._style_name)
@@ -93,7 +95,7 @@ class Model:
         token_ids = self._tokenizer.encode_text(prompt)
         token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
         self._model.eval()
-        response = []
+        # response = []
         token = 0  # Assign random value for now
         for _ in range(self._context_length):
             with torch.inference_mode():
@@ -120,10 +122,10 @@ class Model:
                 if token == self._endoftext:
                     break
 
-                response.append(token.item())
+                # response.append(token.item())
                 token_ids = torch.cat((token_ids, token), dim=-1)
 
-        return self._tokenizer.decode_ids(torch.tensor(response))
+            yield self._tokenizer.decode_ids(token)
 
     def train(
         self,
