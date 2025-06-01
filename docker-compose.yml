@@ -1,17 +1,13 @@
 services:
-  # chat_history:
-  #   build:
-  #     context: './chathist'
-  #     dockerfile: 'dockerfiles/chat_history.dockerfile'
-  #   ports:
-  #     - '8000'
-  #   mem_limit: 10g
-  chat_title:
+  chat_history:
     build:
       context: './chathist'
-      dockerfile: 'dockerfiles/chat_title.dockerfile'
-    # ports:
-    #   - '8001'
+      dockerfile: 'dockerfiles/chat_history.dockerfile'
+
+  # chat_title:
+  #   build:
+  #     context: './chathist'
+  #     dockerfile: 'dockerfiles/chat_title.dockerfile'
 
   server:
     build:
