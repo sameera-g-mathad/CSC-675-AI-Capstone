@@ -362,6 +362,9 @@ class MultiHeadAttention(EModule):
 
         self.dropout = nn.Dropout(_gpt_flavor["drop_rate"])
 
+        self.k_cache = None
+        self.v_cache = None
+
         # The mask is used to prevent the model from attending
         # to the future tokens in the sequence.
         self.mask = torch.triu(
@@ -378,6 +381,15 @@ class MultiHeadAttention(EModule):
         # This runs if LoRA is used in the model.
         if self._use_lora:
             self.use_lora()
+
+    def init_cache(self):
+        """
+        Initializes the cache for key and value weights.
+        This is used to store the key and value weights
+        for the multi-head attention layer.
+        """
+        self.k_cache = None
+        self.v_cache = None
 
     def use_lora(self):
         """
@@ -411,17 +423,34 @@ class MultiHeadAttention(EModule):
         batch_size, num_tokens, _ = x.shape
 
         # Multiplying the inputs with all the query, key and value weights.
+        # if self.k_cache is not None and self.v_cache is not None:
+        #     queries = self.wq(x[:, -1, :]).unsqueeze(1)
+        #     keys = self.wk(x[:, -1, :]).unsqueeze(1)
+        #     values = self.wv(x[:, -1, :]).unsqueeze(1)
+        # else:
         queries = self.wq(x)
         keys = self.wk(x)
         values = self.wv(x)
+
+        # If the cache is not None, we need to concatenate the keys and values
+        # with the cached keys and values.
+        # if self.k_cache is not None and self.v_cache is not None:
+        #     # print(self.k_cache.shape, keys.shape)
+        #     keys = torch.cat((self.k_cache, keys), dim=1)
+        #     values = torch.cat((self.v_cache, values), dim=1)
+
+        # self.k_cache = keys
+        # self.v_cache = values
 
         # Reshaping the inputs to (batch_size, num_tokens, heads, head_dim)
         # where head_dim = emb_dim / n_heads
         # This is done to compute the attention scores.
         # The inputs are reshaped to (batch_size, num_tokens, heads, head_dim)
-        queries = queries.view(batch_size, num_tokens, self.heads, self.head_dim)
-        keys = keys.view(batch_size, num_tokens, self.heads, self.head_dim)
-        values = values.view(batch_size, num_tokens, self.heads, self.head_dim)
+        queries = queries.view(batch_size, queries.shape[1], self.heads, self.head_dim)
+        keys = keys.view(batch_size, keys.shape[1], self.heads, self.head_dim)
+        values = values.view(batch_size, values.shape[1], self.heads, self.head_dim)
+
+        # print("Before: ", queries.shape, keys.shape, values.shape)
 
         # The inputs are reshaped to (batch_size, heads, num_tokens, head_dim)
         # This is done to compute the attention scores.
@@ -433,6 +462,7 @@ class MultiHeadAttention(EModule):
         # The attention scores are computed by multiplying the queries and keys.
         # The attention scores are reshaped to (batch_size, heads, num_tokens, num_tokens)
         attn_scores = queries @ keys.transpose(2, 3)
+        # seq_length = attn_scores.shape[-1]
         mask_bool = self.mask[:num_tokens, :num_tokens]
         attn_scores.masked_fill_(mask_bool, -torch.inf)
 
@@ -534,6 +564,14 @@ class TransformerBlock(EModule):
         self.mlp = MLPGPT2(_gpt_flavor["emb_dim"])
         self.multi_head = MultiHeadAttention(_gpt_flavor)
         self.dropout = nn.Dropout(_gpt_flavor["drop_rate"])
+
+    def init_cache(self):
+        """
+        Initializes the cache for key and value weights.
+        This is used to store the key and value weights
+        for the multi-head attention layer.
+        """
+        self.multi_head.init_cache()
 
     def forward(self, x):
         """
@@ -682,6 +720,17 @@ class GPT2(EModule):
             if isinstance(self.final_layer, nn.Linear):
                 self._log.info("Using Lora for final output layer!!")
                 self.final_layer = LinearLoRA(self.final_layer)
+
+    def init_cache(self):
+        """
+        Initializes the cache for key and value weights.
+        This is used to store the key and value weights
+        for the multi-head attention layer.
+        """
+        for layer in range(self._layers):
+            transfomer = self.transformers[layer]
+            if isinstance(transfomer, TransformerBlock):
+                transfomer.init_cache()
 
     def forward(self, batch_x):
         """

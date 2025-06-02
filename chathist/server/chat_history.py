@@ -17,12 +17,12 @@ class PromptInput(BaseModel):
     authorized: str | None = None
     prompt: str
 
+
 app = FastAPI()
 
 # set first model - History model
 chathist.config.load_config(config_path="conf/train", config_name="history")
 chat_hist_model = Model()
-
 
 
 @app.post("/api/v1/query")
@@ -40,9 +40,18 @@ def query_history(request: PromptInput) -> StreamingResponse:
         try:
             prompt = request.prompt
             for token in chat_hist_model.generate(prompt):
-                yield json.dumps({"status": "success", "message": token}) + "\n"
+                if token == chathist.config.endoftext:
+                    yield json.dumps(
+                        {"status": "success", "response": "", "done": True}
+                    ) + "\n"
+                    return
+                yield json.dumps(
+                    {"status": "success", "response": token, "done": False}
+                ) + "\n"
         except Exception as e:
             print(e)
-            yield json.dumps({"status": "faliure", "message": "Internal Error"}) + "\n"
+            yield json.dumps(
+                {"status": "faliure", "response": "Internal Error", "done": True}
+            ) + "\n"
 
     return StreamingResponse(stream(), media_type="application/json")

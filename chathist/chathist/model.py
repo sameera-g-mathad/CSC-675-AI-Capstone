@@ -95,6 +95,7 @@ class Model:
         token_ids = self._tokenizer.encode_text(prompt)
         token_ids = torch.unsqueeze(token_ids, dim=0).to(self._device)
         self._model.eval()
+        # self._model.init_cache()
         # response = []
         token = 0  # Assign random value for now
         for _ in range(self._context_length):
@@ -120,10 +121,12 @@ class Model:
                     token = torch.argmax(last_token, dim=-1, keepdim=True)
 
                 if token == self._endoftext:
-                    break
+                    yield self._tokenizer.decode_ids(token)
+                    return
 
                 # response.append(token.item())
                 token_ids = torch.cat((token_ids, token), dim=-1)
+                # token_ids = token
 
             yield self._tokenizer.decode_ids(token)
 
