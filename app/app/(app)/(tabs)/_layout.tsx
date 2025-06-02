@@ -6,7 +6,7 @@ const ICON_SIZE = 30;
 
 const options = (title: string, tintColor: string, iconName: "comment" | "search" | "gear") => {
     return {
-        header: () => <BlurredHeader title={title} />,
+        title: title,
         tabBarActiveTintColor: tintColor,
         tabBarLabel: title,
         tabBarIcon: (({ color }: any) => <EvilIcons color={color} name={iconName} size={ICON_SIZE} />),

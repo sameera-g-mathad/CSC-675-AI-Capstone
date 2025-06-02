@@ -22,7 +22,12 @@ export default function chat() {
     return (
         <View style={styles.viewStyle}>
             <FlatList data={data} horizontal={false} keyExtractor={item => item.id} renderItem={({ item }) =>
-                <Pressable style={styles.pressableStyle} onPress={() => router.push(`./chats/${item.id}`)}>
+                <Pressable style={styles.pressableStyle} onPress={() => {
+                    router.push({
+                        pathname: `./chats/${item.id}`,
+                        params: { name: item.name }
+                    });
+                }}>
                     <Text>{item.name}</Text>
                 </Pressable>
             } />
@@ -35,8 +40,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     pressableStyle: {
-        backgroundColor: 'blue',
+        backgroundColor: 'white',
         padding: 20,
-        margin: 5
+        margin: 5,
+        borderRadius: '3%'
     }
 });
