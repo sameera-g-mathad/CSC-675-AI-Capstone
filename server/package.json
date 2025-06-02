@@ -9,6 +9,7 @@
   "author": "Sameer Gururaj Mathad",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.1.0",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.10"
