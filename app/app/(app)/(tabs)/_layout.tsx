@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router'
 import { EvilIcons } from '@expo/vector-icons';
-import BlurredHeader from '../_headers/BlurredHeader';
+import BlurredHeader from '../../_headers/BlurredHeader';
 
 const ICON_SIZE = 30;
 
@@ -18,7 +18,7 @@ export default function _layout() {
         {
             animation: 'shift',
             headerTitleAlign: 'left',
-            tabBarStyle: { height: 60, marginBottom: 10 },
+            tabBarStyle: { height: 60 },
             tabBarLabelPosition: 'below-icon',
         }
     }>

@@ -22,7 +22,7 @@ export default function chat() {
     return (
         <View style={styles.viewStyle}>
             <FlatList data={data} horizontal={false} keyExtractor={item => item.id} renderItem={({ item }) =>
-                <Pressable style={styles.pressableStyle} onPress={() => router.push(`/chats`)}>
+                <Pressable style={styles.pressableStyle} onPress={() => router.push(`./chats/${item.id}`)}>
                     <Text>{item.name}</Text>
                 </Pressable>
             } />
