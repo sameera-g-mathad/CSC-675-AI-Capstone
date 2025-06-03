@@ -18,7 +18,6 @@ class PromptInput(BaseModel):
     prompt: str
 
 
-
 app = FastAPI()
 
 chathist.config.load_config(config_path="conf/train", config_name="chat_title")
@@ -39,7 +38,15 @@ def query_title(request: PromptInput) -> StreamingResponse:
     def stream(prompt: str) -> Generator[str, None, None]:
         try:
             for token in chat_title_model.generate(prompt):
-                yield json.dumps({"status": "success", "message": token}) + "\n"
+                if token == chathist.config.endoftext_decoded:
+                    yield json.dumps(
+                        {"status": "success", "response": "", "done": True}
+                    ) + "\n"
+                else:
+                    yield json.dumps(
+                        {"status": "success", "response": token, "done": False}
+                    ) + "\n"
+
         except Exception as e:
             print(e)
             yield json.dumps({"status": "faliure", "message": "Internal Error"}) + "\n"

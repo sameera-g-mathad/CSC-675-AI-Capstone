@@ -40,14 +40,14 @@ def query_history(request: PromptInput) -> StreamingResponse:
         try:
             prompt = request.prompt
             for token in chat_hist_model.generate(prompt):
-                if token == chathist.config.endoftext:
+                if token == chathist.config.endoftext_decoded:
                     yield json.dumps(
                         {"status": "success", "response": "", "done": True}
                     ) + "\n"
-                    return
-                yield json.dumps(
-                    {"status": "success", "response": token, "done": False}
-                ) + "\n"
+                else:
+                    yield json.dumps(
+                        {"status": "success", "response": token, "done": False}
+                    ) + "\n"
         except Exception as e:
             print(e)
             yield json.dumps(

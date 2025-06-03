@@ -316,9 +316,18 @@ class Config:
     @property
     def endoftext(self) -> int:
         """
-        Returns the set or default endoftext value.
+        Returns the default endoftext value.
         """
         return self._endoftext
+
+    @property
+    def endoftext_decoded(self) -> str:
+        """
+        Returns the default endoftext value in string.
+        """
+        return self.tokenizer.decode_ids(
+            torch.tensor([self._endoftext], device=self._device)
+        )
 
     @property
     def ignore_index(self) -> int:
