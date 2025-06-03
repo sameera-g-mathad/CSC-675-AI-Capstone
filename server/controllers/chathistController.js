@@ -16,6 +16,7 @@ const stream = (url) => {
   return async (req, res) => {
     try {
       const { prompt } = req.body;
+      console.log('Prompt:', prompt);
       const response = await fetch(url, {
         method: 'POST',
         headers: {

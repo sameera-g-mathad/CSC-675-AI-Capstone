@@ -5,6 +5,7 @@ import { router } from 'expo-router'
 import uuid from 'react-native-uuid'
 interface tabHeaderTitle {
     addButton: boolean,
+    backgroundColor: string,
     title: string;
 
 }
@@ -13,9 +14,9 @@ const generateUUID = () => {
     return uuid.v4()
 }
 
-export default function TabHeader({ title, addButton }: tabHeaderTitle) {
+export default function TabHeader({ title, addButton, backgroundColor }: tabHeaderTitle) {
     return (
-        <View style={styles.viewStyle}>
+        <View style={{ ...styles.viewStyle, backgroundColor }}>
             <Text style={styles.textStyle}>{title}</Text>
             {addButton && <TouchableOpacity onPress={() => {
                 const uuid = generateUUID();
@@ -35,7 +36,8 @@ const styles = StyleSheet.create({
         padding: 10,
         display: "flex",
         flexDirection: 'row',
-        backgroundColor: 'red',
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10
     },
     textStyle: {
         fontWeight: 'bold',

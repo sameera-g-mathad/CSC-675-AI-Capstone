@@ -6,15 +6,15 @@ const ICON_SIZE = 30;
 
 interface optionsInterface {
     title: string,
-    tintColor: string,
+    color: string,
     iconName: "comment" | "image" | "gear",
     addButton: boolean
 }
 
-const options = ({ title, tintColor, iconName, addButton }: optionsInterface) => {
+const options = ({ title, color, iconName, addButton }: optionsInterface) => {
     return {
-        header: () => <TabHeader title={title} addButton={addButton} />,
-        tabBarActiveTintColor: tintColor,
+        header: () => <TabHeader title={title} addButton={addButton} backgroundColor={color} />,
+        tabBarActiveTintColor: color,
         tabBarLabel: title,
         tabBarIcon: (({ color }: any) => <EvilIcons color={color} name={iconName} size={ICON_SIZE} />),
     }
@@ -29,11 +29,11 @@ export default function _layout() {
             tabBarLabelPosition: 'below-icon',
         }
     }>
-        <Tabs.Screen name='index' options={options({ title: 'chats', tintColor: 'green', iconName: 'comment', addButton: true })} />
+        <Tabs.Screen name='index' options={options({ title: 'chats', color: '#6ee7b7', iconName: 'comment', addButton: true, })} />
 
-        <Tabs.Screen name='explore' options={options({ title: 'explore', tintColor: 'red', iconName: 'image', addButton: false })} />
+        <Tabs.Screen name='explore' options={options({ title: 'explore', color: '#a5b4fc', iconName: 'image', addButton: false, })} />
 
-        <Tabs.Screen name='settings' options={options({ title: 'settings', tintColor: 'yellow', iconName: 'gear', addButton: false })} />
+        <Tabs.Screen name='settings' options={options({ title: 'settings', color: '#0891b2', iconName: 'gear', addButton: false, })} />
     </Tabs>;
 }
 

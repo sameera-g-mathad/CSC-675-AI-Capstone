@@ -1,22 +1,27 @@
 import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, View } from "react-native";
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigation, useLocalSearchParams, useRouter } from "expo-router";
 import Chatbox from "@/app/_components/Chatbox";
-import ChatHistContext from "@/app/_context/ChathistContext";
+import Content from "@/app/_components/Content";
+import { HeaderBackButton } from '@react-navigation/elements';
 
 export default function Chat() {
-    const { messages, askQuery } = useContext(ChatHistContext)
     const navigation = useNavigation();
-    const { param, title } = useLocalSearchParams();
+    const router = useRouter()
+    const { title } = useLocalSearchParams();
     useEffect(() => {
         navigation.setOptions({
             header: () =>
             (
                 <View style={{
-                    height: 90,
+                    height: 70,
                     padding: 10,
-                    justifyContent: 'center'
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#6ee7b7'
                 }}>
+                    <HeaderBackButton onPress={() => router.replace('/')} />
                     < Text >{title}</ Text>
                 </View>
             )
@@ -26,10 +31,10 @@ export default function Chat() {
         <SafeAreaView style={styles.viewContainer}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={90}
+                keyboardVerticalOffset={130}
                 style={{ flex: 1 }}>
                 <View style={styles.chatContainer}>
-                    <Text>{param}</Text>
+                    <Content />
                 </View>
                 <View>
                     <Chatbox />
@@ -42,7 +47,6 @@ export default function Chat() {
 const styles = StyleSheet.create({
     viewContainer: {
         flex: 1,
-        backgroundColor: "blue"
     },
     chatContainer: {
         flex: 1,
