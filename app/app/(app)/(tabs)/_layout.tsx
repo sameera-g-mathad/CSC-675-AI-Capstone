@@ -1,12 +1,19 @@
 import { Tabs } from 'expo-router'
 import { EvilIcons } from '@expo/vector-icons';
-import BlurredHeader from '../../_headers/BlurredHeader';
+import TabHeader from '../../_components/TabHeader';
 
 const ICON_SIZE = 30;
 
-const options = (title: string, tintColor: string, iconName: "comment" | "search" | "gear") => {
+interface optionsInterface {
+    title: string,
+    tintColor: string,
+    iconName: "comment" | "image" | "gear",
+    addButton: boolean
+}
+
+const options = ({ title, tintColor, iconName, addButton }: optionsInterface) => {
     return {
-        title: title,
+        header: () => <TabHeader title={title} addButton={addButton} />,
         tabBarActiveTintColor: tintColor,
         tabBarLabel: title,
         tabBarIcon: (({ color }: any) => <EvilIcons color={color} name={iconName} size={ICON_SIZE} />),
@@ -22,11 +29,11 @@ export default function _layout() {
             tabBarLabelPosition: 'below-icon',
         }
     }>
-        <Tabs.Screen name='index' options={options('chats', 'green', 'comment')} />
+        <Tabs.Screen name='index' options={options({ title: 'chats', tintColor: 'green', iconName: 'comment', addButton: true })} />
 
-        <Tabs.Screen name='explore' options={options('explore', 'red', 'search')} />
+        <Tabs.Screen name='explore' options={options({ title: 'explore', tintColor: 'red', iconName: 'image', addButton: false })} />
 
-        <Tabs.Screen name='settings' options={options('settings', 'yellow', 'gear')} />
+        <Tabs.Screen name='settings' options={options({ title: 'settings', tintColor: 'yellow', iconName: 'gear', addButton: false })} />
     </Tabs>;
 }
 

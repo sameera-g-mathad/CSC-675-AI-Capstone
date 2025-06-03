@@ -1,7 +1,7 @@
 import { StyleSheet, FlatList, Text, Pressable, View } from "react-native";
 import React from "react";
 import { router } from 'expo-router'
-
+import { ChatHistContextProvider } from "@/app/_context/ChathistContext";
 
 const data = [
     { id: '1', name: 'Alice' },
@@ -20,18 +20,20 @@ const data = [
 
 export default function chat() {
     return (
-        <View style={styles.viewStyle}>
-            <FlatList data={data} horizontal={false} keyExtractor={item => item.id} renderItem={({ item }) =>
-                <Pressable style={styles.pressableStyle} onPress={() => {
-                    router.push({
-                        pathname: `./chats/${item.id}`,
-                        params: { name: item.name }
-                    });
-                }}>
-                    <Text>{item.name}</Text>
-                </Pressable>
-            } />
-        </View>
+        <ChatHistContextProvider>
+            <View style={styles.viewStyle}>
+                <FlatList data={data} horizontal={false} keyExtractor={item => item.id} renderItem={({ item }) =>
+                    <Pressable style={styles.pressableStyle} onPress={() => {
+                        router.push({
+                            pathname: `./chats/${item.id}`,
+                            params: { name: item.name }
+                        });
+                    }}>
+                        <Text>{item.name}</Text>
+                    </Pressable>
+                } />
+            </View>
+        </ChatHistContextProvider>
     );
 }
 

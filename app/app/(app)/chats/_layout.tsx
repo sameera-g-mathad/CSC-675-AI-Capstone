@@ -8,7 +8,7 @@ export default function layout() {
             options={
                 {
                     headerShown: true,
-                    headerTitle: ''
+                    headerTitle: '',
                 }} />
     </Stack>
 }
