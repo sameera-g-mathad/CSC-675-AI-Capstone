@@ -1,6 +1,7 @@
 import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, View } from "react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import { useNavigation, useLocalSearchParams, useRouter } from "expo-router";
+import ChatHistContext from "@/app/_context/ChathistContext";
 import Chatbox from "@/app/_components/Chatbox";
 import Content from "@/app/_components/Content";
 import { HeaderBackButton } from '@react-navigation/elements';
@@ -8,7 +9,7 @@ import { HeaderBackButton } from '@react-navigation/elements';
 export default function Chat() {
     const navigation = useNavigation();
     const router = useRouter()
-    const { title } = useLocalSearchParams();
+    const { chat_title } = useContext(ChatHistContext)
     useEffect(() => {
         navigation.setOptions({
             header: () =>
@@ -22,11 +23,11 @@ export default function Chat() {
                     backgroundColor: '#6ee7b7'
                 }}>
                     <HeaderBackButton onPress={() => router.replace('/')} />
-                    < Text >{title}</ Text>
+                    < Text >{chat_title}</ Text>
                 </View>
             )
         })
-    }, [])
+    }, [chat_title])
     return (
         <SafeAreaView style={styles.viewContainer}>
             <KeyboardAvoidingView

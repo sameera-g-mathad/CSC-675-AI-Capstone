@@ -4,11 +4,11 @@ import { MaterialIcons } from "@expo/vector-icons";
 import ChatHistContext from "../_context/ChathistContext";
 
 export default function Chatbox() {
-    const [query, setQuery] = useState("What is the historian's role in using myths?");
+    const [query, setQuery] = useState("");
     const { askQuery } = useContext(ChatHistContext)
     return (
         <View style={styles.viewStyles}>
-            <TextInput value={query} onChangeText={setQuery} style={styles.inputStyle} placeholder="How does a historian evaluate events?" placeholderTextColor='#94a3b8' />
+            <TextInput value={query} multiline={true} onChangeText={setQuery} style={styles.inputStyle} placeholder="How does a historian evaluate events?" placeholderTextColor='#94a3b8' />
             <TouchableOpacity
                 onPress={() => {
                     askQuery(query)
@@ -33,13 +33,16 @@ const styles = StyleSheet.create({
         height: 60,
         display: 'flex',
         flexDirection: 'row',
+        alignItems: 'center',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         backgroundColor: 'white'
     },
     inputStyle: {
         flex: 1,
-        paddingLeft: 10,
+        padding: 10,
+        lineHeight: 20,
+        letterSpacing: 0.5,
         outlineWidth: 0,
     }
 });

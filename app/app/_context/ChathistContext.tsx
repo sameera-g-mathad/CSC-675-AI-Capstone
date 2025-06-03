@@ -11,6 +11,11 @@ type updateResponseQuery = {
     value: [number, string]
 }
 
+type updateTitle = {
+    action: 'update_title',
+    value: string
+}
+
 type Message = {
     role: 'user' | 'bot',
     content: string
@@ -44,7 +49,7 @@ async function* readStream(reader: ReadableStreamDefaultReader<Uint8Array<ArrayB
     return
 }
 
-const chathistReducer = (state: ChatState, payload: userQueryAction | updateResponseQuery): ChatState => {
+const chathistReducer = (state: ChatState, payload: userQueryAction | updateResponseQuery | updateTitle): ChatState => {
     switch (payload.action) {
         case 'user_query': return {
             ...state,
@@ -60,6 +65,7 @@ const chathistReducer = (state: ChatState, payload: userQueryAction | updateResp
                 return el;
             })
         }
+        case 'update_title': return { ...state, chat_title: payload.value }
         default: return state;
     }
 }
@@ -67,7 +73,7 @@ const chathistReducer = (state: ChatState, payload: userQueryAction | updateResp
 export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [state, dispatch] = useReducer(chathistReducer, {
         messages: [],
-        chat_title: ''
+        chat_title: 'New Title'
     } as ChatState)
     const askQuery = useCallback(async (query: string) => {
         let message = ''
@@ -89,8 +95,34 @@ export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children 
         else {
             console.log('Error while streaming.')
         }
+        if (state.chat_title === 'New Title') {
+            getTitle(query = `User: ${query}\n Bot: ${message}`)
+        }
         return undefined;
     }, [state.messages.length])
+
+    const getTitle = useCallback(async (query: string) => {
+        let message = ''
+        const response = await fetch('http://75.102.226.48:4000/api/v1/title', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt: query })
+        })
+        if (response.body) {
+            const reader = response.body.getReader()
+            for await (const response of readStream(reader)) {
+                message += response
+                dispatch({ action: 'update_title', value: message })
+            }
+        }
+        else {
+            console.log('Error while streaming.')
+        }
+        return undefined;
+    }, [])
+
     return <ChatHistContext.Provider value={{ ...state, askQuery }}>
         {children}
     </ChatHistContext.Provider>

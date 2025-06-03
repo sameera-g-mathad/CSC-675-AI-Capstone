@@ -26,7 +26,6 @@ export default function chat() {
                     <Pressable style={styles.pressableStyle} onPress={() => {
                         router.push({
                             pathname: `./chats/${item.id}`,
-                            params: { name: item.name }
                         });
                     }}>
                         <Text>{item.name}</Text>
