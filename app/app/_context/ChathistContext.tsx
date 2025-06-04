@@ -16,6 +16,11 @@ type updateTitle = {
     value: string
 }
 
+type updateMessages = {
+    action: 'update_messages',
+    value: { displayImage: string, chat_title: string, messages: any }
+}
+
 type Message = {
     role: 'user' | 'bot',
     content: string
@@ -24,16 +29,20 @@ type Message = {
 type ChatState = {
     messages: Message[];
     chat_title: string;
+    displayImage: string
 };
 
 type ChatContextType = ChatState & {
-    askQuery: (query: string) => Promise<void>;
+    askQuery: (uuid: string, query: string) => Promise<void>;
+    queryMessages: (uuid: string) => Promise<void>;
 };
 
 const ChatHistContext = createContext<ChatContextType>({
     messages: [],
     chat_title: '',
-    askQuery: async (query: string) => undefined
+    displayImage: '',
+    askQuery: async (uuid: string, query: string) => undefined,
+    queryMessages: async (uuid: string) => undefined
 })
 
 const decoder = new TextDecoder();
@@ -49,7 +58,7 @@ async function* readStream(reader: ReadableStreamDefaultReader<Uint8Array<ArrayB
     return
 }
 
-const chathistReducer = (state: ChatState, payload: userQueryAction | updateResponseQuery | updateTitle): ChatState => {
+const chathistReducer = (state: ChatState, payload: userQueryAction | updateResponseQuery | updateTitle | updateMessages): ChatState => {
     switch (payload.action) {
         case 'user_query': return {
             ...state,
@@ -65,7 +74,11 @@ const chathistReducer = (state: ChatState, payload: userQueryAction | updateResp
                 return el;
             })
         }
-        case 'update_title': return { ...state, chat_title: payload.value }
+        case 'update_title': return { ...state, chat_title: payload.value };
+        case 'update_messages': {
+            const displayImage = payload.value['displayImage'] !== undefined ? payload.value['displayImage'] : ''
+            return { ...state, displayImage, chat_title: payload.value['chat_title'], messages: [...state.messages, ...payload.value['messages']] }
+        }
         default: return state;
     }
 }
@@ -73,17 +86,35 @@ const chathistReducer = (state: ChatState, payload: userQueryAction | updateResp
 export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [state, dispatch] = useReducer(chathistReducer, {
         messages: [],
-        chat_title: 'New Title'
+        chat_title: 'New Title',
+        displayImage: ''
     } as ChatState)
-    const askQuery = useCallback(async (query: string) => {
-        let message = ''
-        dispatch({ action: 'user_query', value: query });
-        const response = await fetch('http://75.102.226.48:4000/api/v1/query', {
+
+    const queryMessages = async (uuid: string) => {
+        const response = await fetch('http://127.0.0.1:4000/api/v1/getMessages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ prompt: query })
+            body: JSON.stringify({ uuid })
+        })
+        const json = await response.json();
+        const chatDetails = json.data[0]
+        const conversations = json.data['conversations']
+        console.log(json)
+        dispatch({ action: 'update_messages', value: { displayImage: chatDetails['displayImage'], chat_title: chatDetails['chat_title'], messages: conversations } })
+    }
+
+
+    const askQuery = useCallback(async (uuid: string, query: string) => {
+        let message = ''
+        dispatch({ action: 'user_query', value: query });
+        const response = await fetch('http://127.0.0.1:4000/api/v1/query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt: query, uuid })
         })
         if (response.body) {
             const reader = response.body.getReader()
@@ -96,19 +127,19 @@ export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children 
             console.log('Error while streaming.')
         }
         if (state.chat_title === 'New Title') {
-            getTitle(query = `User: ${query}\n Bot: ${message}`)
+            getTitle(uuid, query = `User: ${query}\n Bot: ${message}`)
         }
         return undefined;
     }, [state.messages.length])
 
-    const getTitle = useCallback(async (query: string) => {
+    const getTitle = useCallback(async (uuid: string, query: string) => {
         let message = ''
-        const response = await fetch('http://75.102.226.48:4000/api/v1/title', {
+        const response = await fetch('http://127.0.0.1:4000/api/v1/title', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ prompt: query })
+            body: JSON.stringify({ prompt: query, uuid })
         })
         if (response.body) {
             const reader = response.body.getReader()
@@ -122,8 +153,7 @@ export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children 
         }
         return undefined;
     }, [])
-
-    return <ChatHistContext.Provider value={{ ...state, askQuery }}>
+    return <ChatHistContext.Provider value={{ ...state, askQuery, queryMessages }}>
         {children}
     </ChatHistContext.Provider>
 }

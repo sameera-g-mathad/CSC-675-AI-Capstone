@@ -10,17 +10,30 @@ interface tabHeaderTitle {
 
 }
 
+const createChat = async (uuid: string) => {
+    const response = await fetch('http://127.0.0.1:4000/api/v1/createChat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ uuid })
+    })
+    const { data } = await response.json()
+    return data;
+}
+
 const generateUUID = () => {
     return uuid.v4()
 }
 
-export default function TabHeader({ title, addButton, backgroundColor }: tabHeaderTitle) {
+export default function TabHeader({ title, addButton, backgroundColor }: tabHeaderTitle,) {
     return (
         <View style={{ ...styles.viewStyle, backgroundColor }}>
             <Text style={styles.textStyle}>{title}</Text>
-            {addButton && <TouchableOpacity onPress={() => {
+            {addButton && <TouchableOpacity onPress={async () => {
                 const uuid = generateUUID();
-                router.push({ pathname: `./chats/${uuid}`, params: { title: 'New Chat' } })
+                const data = await createChat(uuid);
+                router.push({ pathname: `./chats/${uuid}`, params: data })
             }}>
                 <AntDesign name='plus' size={30} />
             </TouchableOpacity>}

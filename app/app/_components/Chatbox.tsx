@@ -3,7 +3,10 @@ import { TouchableOpacity, StyleSheet, Text, TextInput, View } from "react-nativ
 import { MaterialIcons } from "@expo/vector-icons";
 import ChatHistContext from "../_context/ChathistContext";
 
-export default function Chatbox() {
+interface chatBoxInterface {
+    uuid: string
+}
+export default function Chatbox({ uuid }: chatBoxInterface) {
     const [query, setQuery] = useState("");
     const { askQuery } = useContext(ChatHistContext)
     return (
@@ -11,7 +14,7 @@ export default function Chatbox() {
             <TextInput value={query} multiline={true} onChangeText={setQuery} style={styles.inputStyle} placeholder="How does a historian evaluate events?" placeholderTextColor='#94a3b8' />
             <TouchableOpacity
                 onPress={() => {
-                    askQuery(query)
+                    askQuery(uuid, query)
                     setQuery('');
                 }
                 }
