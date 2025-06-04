@@ -87,6 +87,7 @@ exports.getQuery = async (req, res) => {
       role: 'user',
       content: prompt,
     });
+    console.log('entering');
     let msg = '';
     const response = await fetch('http://127.0.0.1:8000/api/v1/query', {
       method: 'POST',
@@ -109,6 +110,7 @@ exports.getQuery = async (req, res) => {
       });
     });
   } catch (e) {
+    console.log(e);
     res.status(500).json({
       status: 'error',
       data: { message: 'Internal error!!!' },
@@ -206,7 +208,7 @@ exports.createChat = async (req, res) => {
 
 exports.getChats = async (req, res) => {
   try {
-    const data = await Chat.find();
+    const data = await Chat.find().sort({ createdAt: 1 });
     res.status(200).json({
       status: 'success',
       data,

@@ -33,7 +33,7 @@ export default function TabHeader({ title, addButton, backgroundColor }: tabHead
             {addButton && <TouchableOpacity onPress={async () => {
                 const uuid = generateUUID();
                 const data = await createChat(uuid);
-                router.push({ pathname: `./chats/${uuid}`, params: data })
+                router.push({ pathname: `./chats/${uuid}`, params: { chat_uuid: uuid } })
             }}>
                 <AntDesign name='plus' size={30} />
             </TouchableOpacity>}

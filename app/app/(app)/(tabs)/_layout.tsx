@@ -29,11 +29,11 @@ export default function _layout() {
             tabBarLabelPosition: 'below-icon',
         }
     }>
-        <Tabs.Screen name='index' options={options({ title: 'chats', color: '#6ee7b7', iconName: 'comment', addButton: true, })} />
+        <Tabs.Screen name='index' options={options({ title: 'chats', color: '#fffff', iconName: 'comment', addButton: true, })} />
 
-        <Tabs.Screen name='explore' options={options({ title: 'explore', color: '#a5b4fc', iconName: 'image', addButton: false, })} />
+        <Tabs.Screen name='explore' options={options({ title: 'explore', color: '#fffff', iconName: 'image', addButton: false, })} />
 
-        <Tabs.Screen name='settings' options={options({ title: 'settings', color: '#0891b2', iconName: 'gear', addButton: false, })} />
+        {/* <Tabs.Screen name='settings' options={options({ title: 'settings', color: '#fffff', iconName: 'gear', addButton: false, })} /> */}
     </Tabs>;
 }
 

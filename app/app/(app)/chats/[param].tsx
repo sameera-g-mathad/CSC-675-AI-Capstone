@@ -21,7 +21,7 @@ export default function Chat() {
                     display: 'flex',
                     flexDirection: 'row',
                     alignItems: 'center',
-                    backgroundColor: '#6ee7b7'
+                    backgroundColor: '#fffff'
                 }}>
                     <HeaderBackButton onPress={() => router.replace('/')} />
                     {displayImage !== ''

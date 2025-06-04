@@ -15,6 +15,10 @@ const ChatSchema = new mongoose.Schema({
     type: String,
     required: [true, 'A display image is a must'],
   },
+  createdAt: {
+    type: Date,
+    default: new Date(),
+  },
 });
 
 const Chat = mongoose.model('Chat', ChatSchema);

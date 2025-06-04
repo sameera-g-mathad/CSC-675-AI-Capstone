@@ -101,7 +101,7 @@ export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children 
         const json = await response.json();
         const chatDetails = json.data[0]
         const conversations = json.data['conversations']
-        console.log(json)
+        if (chatDetails === undefined) return
         dispatch({ action: 'update_messages', value: { displayImage: chatDetails['displayImage'], chat_title: chatDetails['chat_title'], messages: conversations } })
     }
 
