@@ -6,19 +6,22 @@ interface chatInterface {
 }
 const colorsToUse = {
     'user': {
-        borderColor: '#7dd3fc',
-        backgroundColor: '#e0f2fe'
+        color: '#6366f1',
+        borderColor: '#818cf8',
+        backgroundColor: '#c7d2fe'
     },
     'bot': {
-        borderColor: '#f9a8d4',
-        backgroundColor: '#ffe4e6'
+        color: '#d946ef',
+        borderColor: '#e879f9',
+        backgroundColor: '#f5d0fe'
     }
 }
 function Chat({ children, role }: PropsWithChildren & chatInterface) {
-    const { borderColor, backgroundColor } = colorsToUse[role];
+    const { color, borderColor, backgroundColor } = colorsToUse[role];
     return (
         <View style={styles.viewContainer}>
             <View style={{ ...styles.msgContainer, borderLeftColor: borderColor, backgroundColor }}>
+                <Text style={{ ...styles.roleStyle, color }}>{role}</Text>
                 {children}
             </View>
         </View>
@@ -34,8 +37,11 @@ const styles = StyleSheet.create({
         borderLeftWidth: 5,
         backgroundColor: '#e2e8f0',
     },
-    timeContainer: {
-        padding: 5
+    roleStyle: {
+        fontSize: 17,
+        fontWeight: 'bold',
+        paddingVertical: 5,
+        textTransform: 'capitalize'
     }
 });
 

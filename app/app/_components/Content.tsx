@@ -17,7 +17,6 @@ export default function Content({ uuid }: contentInterface) {
     return <ScrollView>
         {messages.map((msg, index) => {
             return <Chat key={index} role={msg.role}>
-                <Text style={styles.roleStyle}>{msg.role}</Text>
                 <Text style={styles.contentStyle}>{msg.content}</Text>
             </Chat>
         })}
@@ -30,10 +29,4 @@ const styles = StyleSheet.create({
         lineHeight: 25,
         letterSpacing: 0.5
     },
-    roleStyle: {
-        fontSize: 17,
-        fontWeight: 'bold',
-        paddingVertical: 5,
-        textTransform: 'capitalize'
-    }
 });
