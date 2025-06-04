@@ -55,6 +55,6 @@ const styles = StyleSheet.create({
     textStyle: {
         fontWeight: 'bold',
         fontSize: 20,
-        textTransform: 'capitalize'
+        textTransform: 'capitalize',
     }
 });

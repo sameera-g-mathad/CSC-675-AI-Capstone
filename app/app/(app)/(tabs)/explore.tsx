@@ -5,7 +5,7 @@ export default function explore() {
     const [refreshing, setRefreshing] = useState(false);
     const [imageData, setImageData] = useState([])
     const posts = async () => {
-        const response = await fetch('http://10.0.0.214:4000/api/v1/explore', {
+        const response = await fetch('http://127.0.0.1:4000/api/v1/explore', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
