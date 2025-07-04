@@ -2,7 +2,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import { AntDesign } from "@expo/vector-icons";
 import { router } from 'expo-router'
-import uuid from 'react-native-uuid'
+import uuid from 'react-native-uuid';
+
+// This component is used to display the header of a tab.
+// It includes a title and an optional add button.
+// The background color of the header can also be customized. 
+
+
 interface tabHeaderTitle {
     addButton: boolean,
     backgroundColor: string,

@@ -1,6 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 import React, { memo, PropsWithChildren } from "react";
 
+// This component is used to display chat messages in a styled format.
+// It takes in children (the message content) and a role (either 'user' or 'bot').
+// The role determines the styling of the message, including colors and borders.    
+
 interface chatInterface {
     role: 'user' | 'bot'
 }

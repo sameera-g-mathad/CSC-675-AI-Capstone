@@ -39,7 +39,10 @@ class InstructionDataLoader:
 
     def _custom_collate(self, batch, mask_input: bool = False):
         """
-        Experimental
+        This method is used to collate the batch of data into a format that can be used for training.
+        It pads the sequences to the maximum length in the batch, adds end-of-text tokens,
+        and creates input and target tensors. If mask_input is True, it masks the response ids
+        in the target tensor to ignore them during loss calculation.
         """
         _max_length = max([len(item) for item in batch])
         _inputs, _targets = [], []
@@ -92,7 +95,7 @@ class InstructionDataLoader:
         dataset: Dataset
     ):
         """
-        Experimental
+        Method to create a DataLoader for the given dataset.
         """
         _collate_fn = partial(self._custom_collate, mask_input=self._mask_input)
         return DataLoader(

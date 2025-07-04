@@ -12,42 +12,9 @@ const third_draft_range = 31;
 const getStreamer = require('./../utils/createStreamer');
 
 /**
- * Stream functions handles requests for streaming,
- * It takes a URL and returns a function that handles the request.
- *
- * @param {*} url
- * @returns
+ * Controller function to get the title for a chat based on a prompt.
+ * It sends a POST request to a local server to generate the title.
  */
-// const stream = (url, callback) => {
-//   return async (req, res) => {
-//     try {
-//       const { prompt } = req.body;
-//       let msg = '';
-//       const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({ prompt }),
-//       });
-//       const streamer = getStreamer(await response.body.getReader());
-//       streamer.pipe(res);
-//       streamer.on('complete', async (message) => {
-//         msg += message;
-//       });
-//       streamer.on('end', async () => {
-//         msg = msg.replace(/\n/g, ' ');
-//         await callback(msg, req.body);
-//       });
-//     } catch (e) {
-//       res.status(500).json({
-//         status: 'error',
-//         data: { message: 'Internal error!!!' },
-//       });
-//     }
-//   };
-// };
-
 exports.getTitle = async (req, res) => {
   try {
     const { uuid, prompt } = req.body;
@@ -79,6 +46,13 @@ exports.getTitle = async (req, res) => {
     });
   }
 };
+
+/**
+ * Controller function to handle a query request.
+ * It creates a user conversation, sends a POST request to a local server,
+ * and streams the response back to the client.
+ * It also creates a bot conversation with the response message.
+ */
 exports.getQuery = async (req, res) => {
   try {
     const { prompt, uuid } = req.body;
@@ -87,7 +61,6 @@ exports.getQuery = async (req, res) => {
       role: 'user',
       content: prompt,
     });
-    console.log('entering');
     let msg = '';
     const response = await fetch('http://127.0.0.1:8000/api/v1/query', {
       method: 'POST',
@@ -118,6 +91,10 @@ exports.getQuery = async (req, res) => {
   }
 };
 
+/**
+ * Generates an array of random image URLs based on the specified number,
+ * range, and draft type.
+ */
 const generateRandomImages = (n, range, draft) => {
   let result = [];
   for (let i = 0; i < n; i++) {
@@ -126,6 +103,11 @@ const generateRandomImages = (n, range, draft) => {
   return result;
 };
 
+/**
+ * Generates a random image URL based on a random draft type.
+ * It randomly selects a draft type (first, second, or third) and generates
+ * a random image URL within the specified range for that draft type.
+ */
 const generateRandomImage = () => {
   const draftNumber = Math.floor(Math.random() * 3) + 1;
   let range = 0;
@@ -142,6 +124,12 @@ const generateRandomImage = () => {
   return `${draft}/${Math.floor(Math.random() * range) + 1}.jpg`;
 };
 
+/**
+ * Controller function to explore images.
+ * It randomly selects a draft type and generates an array of random image URLs
+ * based on that draft type. The generated images are then sent back in the response.
+ * If the draft type is not recognized, it defaults to generating images from the second draft.
+ */
 exports.exploreImages = (req, res) => {
   let result = [];
   const draftNumber = Math.floor(Math.random() * 3) + 1;
@@ -183,6 +171,13 @@ exports.exploreImages = (req, res) => {
   });
 };
 
+/**
+ * Controller function to create a new chat.
+ * It generates a random image for the chat and creates a new chat entry in the database.
+ * The chat is created with a default title and the provided UUID.
+ * If the chat creation is successful, it returns the created chat data in the response.
+ * If there is an error during chat creation, it returns a failure response with the error details
+ */
 exports.createChat = async (req, res) => {
   try {
     const { uuid } = req.body;
@@ -206,9 +201,15 @@ exports.createChat = async (req, res) => {
   }
 };
 
+/**
+ * Controller function to get all chats.
+ * It retrieves all chat entries from the database, sorted by creation date in descending order.
+ * If the retrieval is successful, it returns the chat data in the response.
+ * If there is an error during retrieval, it returns a failure response with the error details.
+ */
 exports.getChats = async (req, res) => {
   try {
-    const data = await Chat.find().sort({ createdAt: 1 });
+    const data = await Chat.find().sort({ createdAt: -1 });
     res.status(200).json({
       status: 'success',
       data,
@@ -223,6 +224,14 @@ exports.getChats = async (req, res) => {
   }
 };
 
+/**
+ * Controller function to get messages for a specific chat.
+ * It retrieves the chat details and all conversations associated with the specified UUID.
+ * The chat details include the chat title and display image.
+ * The conversations are sorted by creation date in ascending order.
+ * If the retrieval is successful, it returns the chat and conversations data in the response.
+ * If there is an error during retrieval, it returns a failure response with the error details.
+ */
 exports.getMessages = async (req, res) => {
   try {
     const { uuid } = req.body;

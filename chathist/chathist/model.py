@@ -11,7 +11,9 @@ from .instruction_styling import InstructionStyle
 
 class Model:
     """
-    Experimental
+    This is the main class for training and generating text using a GPT-2 model.
+    It handles the training process, evaluation, and text generation based on a given prompt.
+    It uses the GPT2 class for model architecture and training, and the Tokenizer for text encoding.
     """
 
     _device: str
@@ -26,6 +28,12 @@ class Model:
     _tokenizer: chathist.tokenizer.Tokenizer
 
     def __init__(self):
+        """
+        Initializes the Model class with configuration parameters and prepares 
+        the model for training or loading a pre-trained model.
+        It sets up the tokenizer, device, learning rate, end-of-text token,
+        number of epochs, logging, and save path for the model.
+        """
         self._tokenizer = chathist.config.tokenizer
         self._device = chathist.config.device
         self._learning_rate = chathist.config.lr
@@ -61,7 +69,11 @@ class Model:
         self._model.to(self._device)
 
     def _calc_loss(self, inputs: torch.Tensor, targets: torch.Tensor):
-        """Experiment"""
+        """
+        Calculates the loss for the model based on the inputs and targets.
+        This method takes the inputs and targets, passes them through the model,
+        and computes the loss using the CrossEntropyLoss function.
+        """
         inputs = inputs.to(self._device)
         targets = targets.to(self._device)
         logits = self._model(inputs)
@@ -70,7 +82,13 @@ class Model:
         return self._loss(logits.flatten(0, 1), targets.flatten().long())
 
     def _evaluate(self, _loader: torch.utils.data.DataLoader):
-        """Experimental"""
+        """
+        Evaluates the model on the provided data loader.
+        This method sets the model to evaluation mode, iterates through the data loader,
+        calculates the loss for each batch, and logs the average validation loss.
+        It uses the CrossEntropyLoss function to compute the loss.
+
+        """
         self._model.eval()
         total_loss = 0.0
         # Since index starts from 0 below
@@ -87,7 +105,12 @@ class Model:
     def generate(
         self, prompt: str, top_k: int = 0, temperature: float = 0.0
     ) -> Generator[str, Any, Any]:
-        """Experimental"""
+        """
+        Generates text based on the provided prompt using the GPT-2 model.
+        This method formats the prompt using the specified instruction style,
+        encodes it into token IDs, and then generates text by sampling from the model's output
+        logits. It yields generated tokens one by one until the end-of-text token is reached.
+        """
         if not self._style.is_format(prompt):
             self._log.info("Formatting prompt into %s style", self._style_name)
             prompt = self._style.format(prompt)
@@ -136,7 +159,10 @@ class Model:
         val_loader: Optional[torch.utils.data.DataLoader],
     ):
         """
-        Experimental
+        Method to train the model using the provided training and validation data loaders.
+        This method iterates through the training data for a specified number of epochs,
+        calculates the loss for each batch, and updates the model parameters using backpropagation.
+        It also evaluates the model on the validation data if provided, logging the training and validation losses
         """
         train_loss: list = []
         val_loss: list | None = None if val_loader is None else []
@@ -173,7 +199,9 @@ class Model:
 
     def trainable_params(self, verbose: bool = True) -> Optional[pd.DataFrame]:
         """
-        Experimental
+        This method retrieves the model parameters and logs the total number of parameters
+        and the number of trainable parameters. If verbose is True, it returns a DataFrame
+        containing detailed information about the model parameters.
         """
         param_info: dict = self._model.get_model_params(verbose)
         self._log.info("Total model parameters: %s", param_info["total_params"])

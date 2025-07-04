@@ -3,6 +3,9 @@ import { TouchableOpacity, StyleSheet, Text, TextInput, View } from "react-nativ
 import { MaterialIcons } from "@expo/vector-icons";
 import ChatHistContext from "../_context/ChathistContext";
 
+// This component is used to send queries in the chat interface.
+// It takes a UUID as a prop and uses the ChatHistContext to send the query.
+
 interface chatBoxInterface {
     uuid: string
 }

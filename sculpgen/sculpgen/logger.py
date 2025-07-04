@@ -2,7 +2,11 @@ import logging
 
 
 class Logger:
-    """Experimental"""
+    """
+    Logger class for sculpgen package.
+    This class initializes a logger with a specific format and logging level.
+    It provides a property to access the logger instance.
+    """
 
     def __init__(self) -> None:
         logging.basicConfig(
@@ -12,5 +16,7 @@ class Logger:
 
     @property
     def log(self):
-        """Experimental"""
+        """
+        Return sculpgen logger instance.
+        """
         return self._log

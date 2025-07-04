@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+/**
+ * Schema for the Conversation model.
+ */
 const ConversationSchema = new mongoose.Schema({
   content: {
     type: String,

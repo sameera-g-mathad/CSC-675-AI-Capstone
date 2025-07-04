@@ -1,5 +1,9 @@
 import React, { createContext, useCallback, useReducer, type PropsWithChildren, type ReactNode } from 'react'
 
+// This context is used to manage the chat history and messages in the application.
+// It provides functions to ask queries and fetch messages, along with the current state of the chat
+// including messages, chat title, and display image.
+
 
 type userQueryAction = {
     action: 'user_query',
@@ -47,10 +51,17 @@ const ChatHistContext = createContext<ChatContextType>({
 
 const decoder = new TextDecoder();
 
+/**
+ * This function reads a stream of data from a ReadableStreamDefaultReader and yields the response.
+ * It decodes the Uint8Array data into a string and parses it as JSON.
+ * The function continues reading until the stream is finished.
+ */
+// It yields the response and indicates whether the stream is done.
 async function* readStream(reader: ReadableStreamDefaultReader<Uint8Array<ArrayBufferLike>>) {
     let finished = false
     while (!finished) {
         let { value } = await reader.read();
+        console.log(value)
         const { response, done } = JSON.parse(decoder.decode(value, { stream: true }))
         yield response;
         finished = done
@@ -58,6 +69,15 @@ async function* readStream(reader: ReadableStreamDefaultReader<Uint8Array<ArrayB
     return
 }
 
+// This reducer function manages the state of the chat history.
+// It updates the state based on the action type and payload received.
+// The actions include adding a user query, updating the bot's response, updating the chat title,
+// and updating the messages with new data from the server.
+// Each action modifies the state accordingly, ensuring that the chat history is maintained correctly.
+// The state includes an array of messages, a chat title, and a display image.
+// The messages are structured as an array of objects, each containing a role ('user' or 'bot') and content (the message text).
+// The chat title is a string representing the title of the chat,
+// and the display image is a string representing the URL or path to an image associated
 const chathistReducer = (state: ChatState, payload: userQueryAction | updateResponseQuery | updateTitle | updateMessages): ChatState => {
     switch (payload.action) {
         case 'user_query': return {
@@ -83,6 +103,13 @@ const chathistReducer = (state: ChatState, payload: userQueryAction | updateResp
     }
 }
 
+// This context provider component wraps the application and provides the chat history context to its children.
+// It initializes the state using a reducer and provides functions to query messages and ask questions.
+// The `queryMessages` function fetches messages from the server based on a UUID and updates the state with the retrieved messages, chat title, and display image.
+// The `askQuery` function sends a user query to the server, streams the response, and updates the state with the bot's response.
+// If the chat title is still set to 'New Title', it also calls `getTitle` to generate a title based on the user query and bot response.
+// The `getTitle` function sends a request to the server to generate a title based on the provided query and updates the state with the generated title.
+// The context value includes the current state and the functions to interact with the chat history.
 export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [state, dispatch] = useReducer(chathistReducer, {
         messages: [],
@@ -90,6 +117,10 @@ export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children 
         displayImage: ''
     } as ChatState)
 
+    // This function queries messages from the server based on a UUID.
+    // It sends a POST request to the server with the UUID and retrieves the chat details and conversations.
+    // If the chat details are undefined, it returns early.
+    // Otherwise, it dispatches an action to update the state with the retrieved messages, chat title, and display image.
     const queryMessages = async (uuid: string) => {
         const response = await fetch('http://127.0.0.1:4000/api/v1/getMessages', {
             method: 'POST',
@@ -105,7 +136,12 @@ export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children 
         dispatch({ action: 'update_messages', value: { displayImage: chatDetails['displayImage'], chat_title: chatDetails['chat_title'], messages: conversations } })
     }
 
-
+    // This function sends a user query to the server and streams the response.
+    // It dispatches an action to update the state with the user query.
+    // It then sends a POST request to the server with the query and UUID.
+    // If the response body is available, it reads the stream and updates the state with the bot's response as it is received.
+    // If the chat title is still set to 'New Title', it calls the `getTitle` function to generate a title based on the user query and bot response.
+    // Finally, it returns undefined.
     const askQuery = useCallback(async (uuid: string, query: string) => {
         let message = ''
         dispatch({ action: 'user_query', value: query });
@@ -132,6 +168,9 @@ export const ChatHistContextProvider: React.FC<PropsWithChildren> = ({ children 
         return undefined;
     }, [state.messages.length])
 
+
+    // This function generates a title for the chat based on the user query and bot response.
+    // It sends a POST request to the server with the query and UUID.
     const getTitle = useCallback(async (uuid: string, query: string) => {
         let message = ''
         const response = await fetch('http://127.0.0.1:4000/api/v1/title', {
