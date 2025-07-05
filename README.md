@@ -134,8 +134,10 @@ npm start
 
 Example images:
 
-<p float='left'>
-  <img src="readme_images/homepage.png" width="500" height="500"/>
-  <img src="readme_images/chatpage.png" width="500" height="500"/>
-  <img src="readme_images/explore.png" width="500" height="500"/>
-</p>
+<table>
+  <tr>
+    <td><img src="readme_images/homepage.png" width="250"></td>
+    <td><img src="readme_images/chatpage.png" width="250"></td>
+    <td><img src="readme_images/explore.png" width="250"></td>
+  </tr>
+</table>
