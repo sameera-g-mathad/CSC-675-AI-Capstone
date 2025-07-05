@@ -4,11 +4,15 @@
 
 This project presents a full-stack chatbot application focused on Indian history, enabling engaging interactions through a custom React Native interface. At its core, it leverages a GPT-2 model implemented from scratch in PyTorch, finetuned with LoRA weights on an Indian history dataset. To enhance the visual theme, Neural Style Transfer (NST) generates abstract images inspired by traditional Indian sculptures.
 
+### ‼️ Note: The models implemented are GPT-2, and hence are not finetuned and capable of handling conversations. I did not finetune models on conversation dataset.
+
 ### ‼️ Note: This project uses hydra to manage experimenets. This is same for both chathist and sculpgen subfolders. Please refer to config folder under each subfolder for more details.
 
 #### Example Conversation:
 
-![Example Conversation](readme_images/conversation.gif)
+<p float='center'>
+  <img src='readme_images/conversation.gif' alt='Example Conversation' height='500' width='500'/>
+<p>
 
 ## Features
 
@@ -20,11 +24,11 @@ This project presents a full-stack chatbot application focused on Indian history
 
 ## Data Sources
 
-- ** Indian History Dataset**: ![HuggingFace](https://huggingface.co/datasets/BashitAli/Indian_history)
-- **Chat Title Dataset**: ![HuggingFace](https://huggingface.co/datasets/ogrnz/chat-titles)
-- **Indian Sculpture Images**: ![HuggingFace](https://huggingface.co/datasets/Durgas/Indian_sculptures)
-- **Abstract Art Images**: ![Kaggle](https://www.kaggle.com/datasets/bryanb/abstract-art-gallery)
-- ** Other Sources for images**: ![Pixels](https://www.pexels.com/search/pattern/)
+- **Indian History Dataset**: [HuggingFace](https://huggingface.co/datasets/BashitAli/Indian_history)
+- **Chat Title Dataset**: [HuggingFace](https://huggingface.co/datasets/ogrnz/chat-titles)
+- **Indian Sculpture Images**: [HuggingFace](https://huggingface.co/datasets/Durgas/Indian_sculptures)
+- **Abstract Art Images**: [Kaggle](https://www.kaggle.com/datasets/bryanb/abstract-art-gallery)
+- **Other Sources for images**: [Pixels](https://www.pexels.com/search/pattern/)
 
 ## Project Structure
 
@@ -69,13 +73,14 @@ print(stype.format()) #<|user|>Hi, what is the meaning of AI<|llm|>
 - **To Train the model** - Refer notebooks/train folder that has jupyter notebooks for both chat_title and chat_history datasets.
 
 - **server/chat_history.py & server/chat_title.py** - FastAPI server used to serve trained model in inference mode. Simple servers that returns reading stream as response.
-  -- Command to run the chat_history.py
+
+Command to run the chat_history.py
 
 ```bash
 uvicorn server.chat_history:app --reload --port 8000
 ```
 
--- Command to run the chat_title.py
+Command to run the chat_title.py
 
 ```bash
 uvicorn server.chat_title:app --reload --port 8001
@@ -87,3 +92,50 @@ Second part of this project includes implementing Neural Style Transfer for mixi
 
 - **nst_model.py** - This file implements the structure of the NST model. It contains methods for loss calculation (content_loss, style_loss) and training the target image to learn the mixed pattern from random noise.
 - **vgg_mode.py** - This file contains wrapper for VGG19 model used from pytorch and contains a forward method to extract intermediate vector representations used to create a nst image. (Note: The model is used in inference mode.)
+- **notebooks/\*** - Please refer these jupyter notebooks for more details.
+- **yaml/\*** - This implementation uses pyaml, rather than hydra - a change I made for my experimentation. -**Note** - All the images trained were served from s3 bucket and maintained using `dvc`. During presentation, I made access public, now I have deleted the s3 bucket altogether.
+
+Examples of the implementation:
+
+![Sculpture Image Placeholder](readme_images/sculpture_example.png)
+
+![Abstract Image Placeholder](readme_images/abstract_example.png)
+
+![NST image1 placeholder](readme_images/nst_example1.png)
+
+Other NST images generated:
+
+![NST image2 placeholder](readme_images/nst_example2.png)
+![NST image3 placeholder](readme_images/nst_example3.png)
+![NST image4 placeholder](readme_images/nst_example4.png)
+![NST image5 placeholder](readme_images/nst_example5.png)
+![NST image6 placeholder](readme_images/nst_example6.png)
+![NST image7 placeholder](readme_images/nst_example7.png)
+
+### Nodejs server:
+
+To serve both the models finetuned separately, I implemented a Nodejs server that requests respective fastAPI servers for response. This server is also responsible to store conversations. I have used MongoDB as the primary database and managed it via MongoDB Atlas. I have used mongoose as the ODM(Object Data Modelling), having two collections. One is `Chats`, that stores details like chat_uuid, display image, createdAt to name a few. The other is the `Conversations` collection, that stores uuid(for chat identification), role('user', 'bot'), message and createdAt for better retrievel.
+
+To start the server:
+
+```bash
+npm start
+```
+
+### 4. React Native Application:
+
+This is a frontend app that I created to put together everything I worked on. Although, the UI is very simple(had to speed things up for my final presentation and report), I was able to create a simple design, with a homepage, chatpage and a explore page where I displayed nst images from s3 bucket.
+
+To start the server (Follow the prompt that appears):
+
+```bash
+npm start
+```
+
+Example images:
+
+<p float='left'>
+  <img src="readme_images/homepage.png" width="500" height="500"/>
+  <img src="readme_images/chatpage.png" width="500" height="500"/>
+  <img src="readme_images/explore.png" width="500" height="500"/>
+</p>
