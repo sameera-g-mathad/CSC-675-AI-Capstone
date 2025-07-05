@@ -10,9 +10,9 @@ This project presents a full-stack chatbot application focused on Indian history
 
 #### Example Conversation:
 
-<p float='center'>
-  <img src='readme_images/conversation.gif' alt='Example Conversation' height='500' width='500'/>
-<p>
+<div align="center">
+  <img src="readme_images/conversation.gif" alt="Example Conversation" height="250" width="250"/>
+</div>
 
 ## Features
 
@@ -97,20 +97,28 @@ Second part of this project includes implementing Neural Style Transfer for mixi
 
 Examples of the implementation:
 
-![Sculpture Image Placeholder](readme_images/sculpture_example.png)
-
-![Abstract Image Placeholder](readme_images/abstract_example.png)
-
-![NST image1 placeholder](readme_images/nst_example1.png)
+<table>
+  <tr>
+    <td><img src="readme_images/sculpture_example.png" alt="Sculpture Image Placeholder" width="250"</td>
+    <td><img src="readme_images/abstract_example.png" alt="Abstract Image Placeholder" width="250"</td>
+    <td><img src="readme_images/nst_example1.png" alt="NST image1 placeholder" width="250"</td>
+  </tr>
+</table>
 
 Other NST images generated:
 
-![NST image2 placeholder](readme_images/nst_example2.png)
-![NST image3 placeholder](readme_images/nst_example3.png)
-![NST image4 placeholder](readme_images/nst_example4.png)
-![NST image5 placeholder](readme_images/nst_example5.png)
-![NST image6 placeholder](readme_images/nst_example6.png)
-![NST image7 placeholder](readme_images/nst_example7.png)
+<table>
+  <tr>
+    <td><img src="readme_images/nst_example2.png" alt="NST image2 placeholder" width="250"</td>
+    <td><img src="readme_images/nst_example3.png" alt="NST image3 placeholder" width="250"</td>
+    <td><img src="readme_images/nst_example4.png" alt="NST image4 placeholder" width="250"</td>
+  </tr>
+  <tr>
+    <td><img src="readme_images/nst_example5.png" alt="NST image5 placeholder" width="250"</td>
+    <td><img src="readme_images/nst_example6.png" alt="NST image6 placeholder" width="250"</td>
+    <td><img src="readme_images/nst_example7.png" alt="NST image7 placeholder" width="250"</td>
+  </tr>
+</table>
 
 ### Nodejs server:
 
@@ -141,3 +149,19 @@ Example images:
     <td><img src="readme_images/explore.png" width="250"></td>
   </tr>
 </table>
+
+### References (as per my final report):
+
+- Alec Radford, Jeffrey Wu, and Rewon Child, “Language Models are Unsupervised Multitask Learners” .
+
+- Edward J. Hu, Yelong Shen, Phillip Wallis, “LoRA: Low-Rank Adaptation of Large Language Models”.
+
+- Leon A. Gatys, Alexander S. Ecker, Matthias Bethge, “A Neural Algorithm of Artistic Style”.
+
+- Karen Simonyan, Andrew Zisserman, “Very Deep Convolutional Networks for Large-Scale Image Recognition”
+
+- Aldo Ferlatti, “Neural Style Transfer (NST) — theory and implementation” ![source](https://medium.com/@ferlatti.aldo/neural-style-transfer-nst-theory-and-implementation-c26728cf969d).
+
+- Aman Arora, “The Annotated GPT-2" ![source](https://amaarora.github.io/posts/2020-02-18-annotatedGPT2.html).
+
+- Sebastian Raschka, “Build a Large Language Model (From Scratch)” ![source](https://www.manning.com/books/build-a-large-language-model-from-scratch).
