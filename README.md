@@ -11,7 +11,7 @@ This project presents a full-stack chatbot application focused on Indian history
 #### Example Conversation:
 
 <div align="center">
-  <img src="readme_images/conversation.gif" alt="Example Conversation" height="250" width="250"/>
+  <img src="readme_images/conversation.gif" alt="Example Conversation" height="250" width="250" height="250"/>
 </div>
 
 ## Features
@@ -99,9 +99,9 @@ Examples of the implementation:
 
 <table>
   <tr>
-    <td><img src="readme_images/sculpture_example.png" alt="Sculpture Image Placeholder" width="250"</td>
-    <td><img src="readme_images/abstract_example.png" alt="Abstract Image Placeholder" width="250"</td>
-    <td><img src="readme_images/nst_example1.png" alt="NST image1 placeholder" width="250"</td>
+    <td><img src="readme_images/sculpture_example.png" alt="Sculpture Image Placeholder" width="250" height="250"</td>
+    <td><img src="readme_images/abstract_example.png" alt="Abstract Image Placeholder" width="250" height="250"</td>
+    <td><img src="readme_images/nst_example1.png" alt="NST image1 placeholder" width="250" height="250"</td>
   </tr>
 </table>
 
@@ -109,14 +109,14 @@ Other NST images generated:
 
 <table>
   <tr>
-    <td><img src="readme_images/nst_example2.png" alt="NST image2 placeholder" width="250"</td>
-    <td><img src="readme_images/nst_example3.png" alt="NST image3 placeholder" width="250"</td>
-    <td><img src="readme_images/nst_example4.png" alt="NST image4 placeholder" width="250"</td>
+    <td><img src="readme_images/nst_example2.png" alt="NST image2 placeholder" width="250" height="250"</td>
+    <td><img src="readme_images/nst_example3.png" alt="NST image3 placeholder" width="250" height="250"</td>
+    <td><img src="readme_images/nst_example4.png" alt="NST image4 placeholder" width="250" height="250"</td>
   </tr>
   <tr>
-    <td><img src="readme_images/nst_example5.png" alt="NST image5 placeholder" width="250"</td>
-    <td><img src="readme_images/nst_example6.png" alt="NST image6 placeholder" width="250"</td>
-    <td><img src="readme_images/nst_example7.png" alt="NST image7 placeholder" width="250"</td>
+    <td><img src="readme_images/nst_example5.png" alt="NST image5 placeholder" width="250" height="250"</td>
+    <td><img src="readme_images/nst_example6.png" alt="NST image6 placeholder" width="250" height="250"</td>
+    <td><img src="readme_images/nst_example7.png" alt="NST image7 placeholder" width="250" height="250"</td>
   </tr>
 </table>
 
@@ -144,9 +144,9 @@ Example images:
 
 <table>
   <tr>
-    <td><img src="readme_images/homepage.png" width="250"></td>
-    <td><img src="readme_images/chatpage.png" width="250"></td>
-    <td><img src="readme_images/explore.png" width="250"></td>
+    <td><img src="readme_images/homepage.png" width="250" height="250" ></td>
+    <td><img src="readme_images/chatpage.png" width="250" height="250"></td>
+    <td><img src="readme_images/explore.png" width="250" height="250"></td>
   </tr>
 </table>
 
