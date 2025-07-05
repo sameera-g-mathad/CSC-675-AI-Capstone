@@ -160,8 +160,8 @@ Example images:
 
 - Karen Simonyan, Andrew Zisserman, “Very Deep Convolutional Networks for Large-Scale Image Recognition”
 
-- Aldo Ferlatti, “Neural Style Transfer (NST) — theory and implementation” ![source](https://medium.com/@ferlatti.aldo/neural-style-transfer-nst-theory-and-implementation-c26728cf969d).
+- Aldo Ferlatti, “Neural Style Transfer (NST) — theory and implementation” [source](https://medium.com/@ferlatti.aldo/neural-style-transfer-nst-theory-and-implementation-c26728cf969d).
 
-- Aman Arora, “The Annotated GPT-2" ![source](https://amaarora.github.io/posts/2020-02-18-annotatedGPT2.html).
+- Aman Arora, “The Annotated GPT-2" [source](https://amaarora.github.io/posts/2020-02-18-annotatedGPT2.html).
 
-- Sebastian Raschka, “Build a Large Language Model (From Scratch)” ![source](https://www.manning.com/books/build-a-large-language-model-from-scratch).
+- Sebastian Raschka, “Build a Large Language Model (From Scratch)” [source](https://www.manning.com/books/build-a-large-language-model-from-scratch).
